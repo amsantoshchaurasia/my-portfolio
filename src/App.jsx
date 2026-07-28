@@ -1,10 +1,20 @@
+import Navbar from "./components/Navbar/Navbar";
+import Hero from "./components/Hero/Hero";
+
 function App() {
-  return (
-    <>
-      <h1>Santosh Chaurasia</h1>
-      <p>AI-Powered Professional Portfolio Management System</p>
-    </>
-  );
+
+return (
+
+<>
+
+<Navbar/>
+
+<Hero/>
+
+</>
+
+)
+
 }
 
 export default App;

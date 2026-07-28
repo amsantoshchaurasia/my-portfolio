@@ -1,0 +1,21 @@
+:root {
+  /* Colors */
+  --primary: #2563eb;
+  --secondary: #0f172a;
+  --accent: #06b6d4;
+
+  --background: #ffffff;
+  --surface: #f8fafc;
+
+  --text: #0f172a;
+  --text-light: #64748b;
+
+  /* Radius */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+
+  /* Shadow */
+  --shadow:
+    0 10px 30px rgba(15, 23, 42, 0.08);
+}
