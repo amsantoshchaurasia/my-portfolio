@@ -1,3 +1,4 @@
+import personal from "../../data/personal";
 import {
   FaGithub,
   FaLinkedin,
@@ -9,7 +10,7 @@ export default function SocialIcons() {
     <div className="flex items-center gap-5 mt-10 text-2xl">
 
       <a
-        href="https://github.com/"
+        href={personal.github}
         target="_blank"
         rel="noreferrer"
         className="w-14 h-14 rounded-full border border-slate-700 flex items-center justify-center bg-slate-900/40 backdrop-blur-md hover:bg-blue-600 hover:border-blue-500 transition-all duration-300 hover:scale-110"
@@ -18,7 +19,7 @@ export default function SocialIcons() {
       </a>
 
       <a
-        href="https://linkedin.com/"
+        href={personal.linkedin}
         target="_blank"
         rel="noreferrer"
        className="w-14 h-14 rounded-full border border-slate-700 flex items-center justify-center bg-slate-900/40 backdrop-blur-md hover:bg-blue-600 hover:border-blue-500 transition-all duration-300 hover:scale-110"
@@ -27,7 +28,7 @@ export default function SocialIcons() {
       </a>
 
       <a
-        href="mailto:example@gmail.com"
+        href={`mailto:${personal.email}`}
         className="w-14 h-14 rounded-full border border-slate-700 flex items-center justify-center bg-slate-900/40 backdrop-blur-md hover:bg-blue-600 hover:border-blue-500 transition-all duration-300 hover:scale-110"
       >
         <FaEnvelope />

@@ -1,10 +1,11 @@
 import Container from "../Common/Container";
 import Button from "../Common/Button";
 import SocialIcons from "../Common/SocialIcons";
+import personal from "../../data/personal";
 
 export default function Hero() {
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[#0B1120] text-white flex items-center pt-24">
+    <section id="home" className="relative min-h-screen overflow-hidden bg-[#0B1120] text-white flex items-center pt-24">
 
       {/* Background Glow */}
       <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-blue-600/20 blur-[120px]"></div>
@@ -28,31 +29,26 @@ export default function Hero() {
           </div>
 
           <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-[110px] xl:text-[135px] font-black leading-none tracking-[-5px]">
-            SANTOSH
+            {personal.firstName.toUpperCase()}
           </h1>
 
           <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-[110px] xl:text-[135px] font-black text-blue-500 leading-none tracking-[-5px]">
-            CHAURASIA
+            {personal.lastName.toUpperCase()}
           </h1>
 
           <h3 className="mt-8 text-2xl font-semibold text-gray-200">
-            Data Analyst
+            {personal.title}
           </h3>
 
-          <p className="mt-2 text-gray-400 text-lg">
-            AI Enthusiast • Web Developer
-          </p>
-
           <p className="mt-8 text-gray-400 leading-8 max-w-xl">
-            Passionate about Python, SQL, Excel, Power BI and AI.
-            I love transforming raw data into meaningful business
-            insights while building modern web applications.
+            {personal.description}
           </p>
 
           <div className="flex flex-wrap gap-5 mt-10">
 
-            <Button>
-              Download Resume
+            <Button
+                onClick={() => window.open(personal.resume)}>
+                    Download Resume
             </Button>
 
             <Button variant="outline">
