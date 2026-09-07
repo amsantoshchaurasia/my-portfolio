@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 
 import Loader from "./components/common/Loader";
-import ScrollProgress from "./components/Common/ScrollProgress";
+import ScrollProgress from "./components/common/ScrollProgress";
 
 import Navbar from "./components/Navbar/Navbar";
 import Hero from "./components/Hero/Hero";
