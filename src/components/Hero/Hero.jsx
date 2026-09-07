@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { FaInstagram, FaFacebook } from "react-icons/fa";
-import Container from "../Common/Container";
-import Button from "../Common/Button";
-import SocialIcons from "../Common/SocialIcons";
+import Container from "../common/Container";
+import Button from "../common/Button";
+import SocialIcons from "../common/SocialIcons";
 import profile from "../../assets/images/profile.png";
-import SectionAnimation from "../Common/SectionAnimation";
+import SectionAnimation from "../common/SectionAnimation";
 import { motion } from "framer-motion";
 import { getResumeURL } from "../../firebase/storage";
 import { getHeroData } from "../../firebase/firestore";

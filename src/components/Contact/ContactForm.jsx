@@ -1,6 +1,6 @@
 import { useState } from "react";
 import emailjs from "@emailjs/browser";
-import Button from "../Common/Button";
+import Button from "../common/Button";
 
 export default function ContactForm() {
   const [form, setForm] = useState({

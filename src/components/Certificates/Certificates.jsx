@@ -1,5 +1,5 @@
-import Container from "../Common/Container";
-import SectionAnimation from "../Common/SectionAnimation";
+import Container from "../common/Container";
+import SectionAnimation from "../common/SectionAnimation";
 
 import MajorCertificates from "./MajorCertificates";
 import OtherCertificates from "./OtherCertificates";

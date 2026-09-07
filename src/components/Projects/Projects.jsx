@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 
-import Container from "../Common/Container";
+import Container from "../common/Container";
 import ProjectCard from "./ProjectCard";
 import ProjectModal from "./ProjectModal";
-import SectionAnimation from "../Common/SectionAnimation";
+import SectionAnimation from "../common/SectionAnimation";
 
 import { getProjects } from "../../firebase/firestore";
 

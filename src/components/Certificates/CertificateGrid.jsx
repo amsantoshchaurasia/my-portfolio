@@ -1,4 +1,4 @@
-import Button from "../Common/Button";
+import Button from "../common/Button";
 
 export default function CertificateCard({ certificate }) {
   return (

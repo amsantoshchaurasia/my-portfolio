@@ -8,8 +8,8 @@ import {
 
 import { FiMapPin } from "react-icons/fi";
 
-import Container from "../Common/Container";
-import SocialIcons from "../Common/SocialIcons";
+import Container from "../common/Container";
+import SocialIcons from "../common/SocialIcons";
 
 export default function Footer() {
   const year = new Date().getFullYear();

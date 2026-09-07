@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
-import Container from "../Common/Container";
-import SectionAnimation from "../Common/SectionAnimation";
+import Container from "../common/Container";
+import SectionAnimation from "../common/SectionAnimation";
 import SkillCard from "./SkillCard";
 
 import { getSkills } from "../../firebase/firestore";

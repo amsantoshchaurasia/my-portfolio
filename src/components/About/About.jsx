@@ -1,7 +1,7 @@
-import Container from "../Common/Container";
+import Container from "../common/Container";
 import AboutContent from "./AboutContent";
 import AboutStats from "./AboutStats";
-import SectionAnimation from "../Common/SectionAnimation";
+import SectionAnimation from "../common/SectionAnimation";
 
 export default function About() {
   return (

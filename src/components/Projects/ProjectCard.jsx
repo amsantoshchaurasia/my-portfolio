@@ -1,4 +1,4 @@
-import Button from "../Common/Button";
+import Button from "../common/Button";
 import TechBadge from "./TechBadge";
 
 export default function ProjectCard({

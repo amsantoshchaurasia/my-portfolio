@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { HiMenuAlt3, HiX } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
-import Button from "../Common/Button";
+import Button from "../common/Button";
 import { getResumeURL } from "../../firebase/storage";
 
 const navLinks = [

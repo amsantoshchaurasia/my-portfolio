@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
-import Container from "../Common/Container";
+import Container from "../common/Container";
 import EducationCard from "./EducationCard";
-import SectionAnimation from "../Common/SectionAnimation";
+import SectionAnimation from "../common/SectionAnimation";
 
 import { getEducations } from "../../firebase/firestore";
 
