@@ -1,0 +1,151 @@
+/* ======================================================
+   MOBILE RESPONSIVE PASS
+   Keeps the existing desktop design unchanged.
+====================================================== */
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+section[id] {
+  scroll-margin-top: 100px;
+}
+
+@media (max-width: 1023px) {
+  /* Section spacing */
+  #about,
+  #skills,
+  #projects,
+  #experience,
+  #education,
+  #certificates,
+  #contact {
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  /* General mobile spacing */
+  #about,
+  #skills,
+  #projects,
+  #experience,
+  #education,
+  #certificates,
+  #contact {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+
+  /* Section headings */
+  #about h2,
+  #skills h2,
+  #projects h2,
+  #experience h2,
+  #education h2,
+  #certificates h2,
+  #contact h2 {
+    font-size: 2.25rem;
+    line-height: 1.1;
+  }
+
+  /* Hero */
+  #home {
+    padding-top: 7.5rem;
+    padding-bottom: 3.5rem;
+  }
+
+  #home h1 {
+    font-size: clamp(2.75rem, 13vw, 4rem);
+    line-height: 0.98;
+  }
+
+  #home h3 {
+    font-size: 1.5rem;
+  }
+
+  #home p {
+    font-size: 1rem;
+    line-height: 1.75rem;
+  }
+
+  #home .flex.flex-nowrap {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  /* Hero image */
+  #home img {
+    max-width: 100%;
+  }
+
+  /* Project cards */
+  #projects .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Education card content */
+  #education .justify-between.items-start.gap-5 {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  #education .whitespace-nowrap {
+    white-space: normal;
+  }
+
+  /* Contact form */
+  #contact form {
+    padding: 1.25rem;
+  }
+
+  /* Footer */
+  footer .flex-nowrap {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  footer {
+    overflow: hidden;
+  }
+
+  /* Back-to-top button */
+  footer + button {
+    right: 1rem;
+    bottom: 1rem;
+    width: 3.25rem;
+    height: 3.25rem;
+  }
+}
+
+@media (max-width: 380px) {
+  /* Very small phones */
+  #home {
+    padding-top: 7rem;
+  }
+
+  #home h1 {
+    font-size: 2.65rem;
+  }
+
+  #home .flex.flex-wrap.gap-4 {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #home .flex.flex-wrap.gap-4 button {
+    width: 100%;
+  }
+
+  #home .flex.flex-nowrap a {
+    width: 3.25rem;
+    height: 3.25rem;
+  }
+}

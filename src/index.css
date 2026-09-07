@@ -1,12 +1,46 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 @import "tailwindcss";
 
+/* Smooth Scroll */
 html {
   scroll-behavior: smooth;
 }
 
+/* Global Styles */
 body {
   font-family: "Inter", sans-serif;
   background: #0b1120;
+  color: white;
+  cursor: default;
+}
+
+/* Global Pointer Cursor */
+button,
+a,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+label[for],
+select,
+summary,
+[role="button"] {
+  cursor: pointer !important;
+}
+
+/* Disabled elements */
+button:disabled,
+input:disabled {
+  cursor: not-allowed !important;
+}
+
+/* Images can't be selected */
+img {
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Text Selection */
+::selection {
+  background: #2563eb;
   color: white;
 }
