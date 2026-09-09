@@ -201,38 +201,27 @@ export async function updateAboutData(data) {
 // ======================================================
 
 export async function getAboutStats() {
-  const ref = doc(
-    db,
-    "portfolio",
-    "aboutStats"
-  );
+  try {
+    const ref = doc(db, "portfolio", "aboutStats");
+    const snap = await getDoc(ref);
+    const manualStats = snap.exists() ? snap.data() : {};
 
-  const snap = await getDoc(ref);
+ 
+    const projects = await getProjects();
+    const certificates = await getCertificates();
+    const experiences = await getExperiences();
 
-  if (snap.exists()) {
-    return snap.data();
+    return {
+      projects: projects.length > 0 ? projects.length : (manualStats.projects || "10+"),
+      certificates: certificates.length > 0 ? certificates.length : (manualStats.certificates || "15+"),
+      experience: experiences.length > 0 ? experiences.length : (manualStats.experience || "1+"),
+      cgpa: manualStats.cgpa || "8.70", 
+    };
+  } catch (error) {
+    console.error("Error getting about stats:", error);
+    return null;
   }
-
-  return null;
 }
-
-
-export async function updateAboutStats(data) {
-  const ref = doc(
-    db,
-    "portfolio",
-    "aboutStats"
-  );
-
-  await setDoc(
-    ref,
-    data,
-    {
-      merge: true,
-    }
-  );
-}
-
 
 // ======================================================
 // SKILLS
