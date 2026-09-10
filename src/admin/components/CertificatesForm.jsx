@@ -23,6 +23,7 @@ const initialForm = {
 // ======================================================
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 // ======================================================
 // CLOUDINARY CONFIG
@@ -57,6 +58,34 @@ async function uploadToCloudinary(file) {
 }
 
 // ======================================================
+// CLOUDINARY IMAGE UPLOAD (for certificate thumbnail)
+// ======================================================
+
+async function uploadImageToCloudinary(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", UPLOAD_PRESET);
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error?.message || "Failed to upload image to Cloudinary.");
+  }
+
+  return {
+    imageUrl: data.secure_url,
+  };
+}
+
+// ======================================================
 // COMPONENT
 // ======================================================
 
@@ -68,6 +97,9 @@ export default function CertificatesForm({
   const [form, setForm] = useState(initialForm);
 
   const [file, setFile] = useState(null);
+
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
   const [loading, setLoading] = useState(false);
 
@@ -91,14 +123,30 @@ export default function CertificatesForm({
       });
 
       setFile(null);
+      setImageFile(null);
+      setImagePreview(null);
     } else {
       setForm(initialForm);
       setFile(null);
+      setImageFile(null);
+      setImagePreview(null);
     }
 
     setMessage("");
     setError("");
   }, [editingCertificate]);
+
+  // ======================================================
+  // CLEANUP IMAGE PREVIEW OBJECT URL
+  // ======================================================
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
 
   // ======================================================
   // INPUT CHANGE
@@ -114,7 +162,7 @@ export default function CertificatesForm({
   }
 
   // ======================================================
-  // FILE VALIDATION
+  // FILE VALIDATION (PDF)
   // ======================================================
 
   function handleFileChange(event) {
@@ -164,6 +212,62 @@ export default function CertificatesForm({
     // ----------------------------------------------------
 
     setFile(selectedFile);
+  }
+
+  // ======================================================
+  // IMAGE VALIDATION (THUMBNAIL)
+  // ======================================================
+
+  function handleImageChange(event) {
+    const selectedImage = event.target.files?.[0];
+
+    setError("");
+    setMessage("");
+
+    if (!selectedImage) {
+      setImageFile(null);
+      setImagePreview(null);
+      return;
+    }
+
+    // ----------------------------------------------------
+    // IMAGE TYPE CHECK
+    // ----------------------------------------------------
+
+    if (!selectedImage.type.startsWith("image/")) {
+      setError("Please select a valid image file (JPG, PNG, WEBP).");
+
+      event.target.value = "";
+      setImageFile(null);
+      setImagePreview(null);
+
+      return;
+    }
+
+    // ----------------------------------------------------
+    // IMAGE SIZE CHECK
+    // ----------------------------------------------------
+
+    if (selectedImage.size > MAX_IMAGE_SIZE) {
+      setError("Certificate image must be smaller than 5 MB.");
+
+      event.target.value = "";
+      setImageFile(null);
+      setImagePreview(null);
+
+      return;
+    }
+
+    // ----------------------------------------------------
+    // VALID IMAGE
+    // ----------------------------------------------------
+
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setImageFile(selectedImage);
+    setImagePreview(URL.createObjectURL(selectedImage));
   }
 
   // ======================================================
@@ -250,6 +354,15 @@ export default function CertificatesForm({
       }
 
       // ==================================================
+      // UPLOAD NEW IMAGE TO CLOUDINARY IF SELECTED
+      // ==================================================
+
+      if (imageFile) {
+        const uploadedImage = await uploadImageToCloudinary(imageFile);
+        certificateData.imageUrl = uploadedImage.imageUrl;
+      }
+
+      // ==================================================
       // CREATE NEW CERTIFICATE
       // ==================================================
 
@@ -277,13 +390,24 @@ export default function CertificatesForm({
       setForm(initialForm);
       setFile(null);
 
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+      setImageFile(null);
+      setImagePreview(null);
+
       // ==================================================
-      // CLEAR FILE INPUT
+      // CLEAR FILE INPUTS
       // ==================================================
 
       const fileInput = document.getElementById("certificate-pdf");
       if (fileInput) {
         fileInput.value = "";
+      }
+
+      const imageInput = document.getElementById("certificate-image");
+      if (imageInput) {
+        imageInput.value = "";
       }
 
       // ==================================================
@@ -317,12 +441,24 @@ export default function CertificatesForm({
 
     setForm(initialForm);
     setFile(null);
+
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    setImageFile(null);
+    setImagePreview(null);
+
     setMessage("");
     setError("");
 
     const fileInput = document.getElementById("certificate-pdf");
     if (fileInput) {
       fileInput.value = "";
+    }
+
+    const imageInput = document.getElementById("certificate-image");
+    if (imageInput) {
+      imageInput.value = "";
     }
 
     onCancelEdit?.();
@@ -474,6 +610,66 @@ export default function CertificatesForm({
           disabled={loading}
           className="w-full resize-none rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
         />
+      </div>
+
+      {/* CERTIFICATE IMAGE (THUMBNAIL) */}
+      <div>
+        <label
+          htmlFor="certificate-image"
+          className="mb-2 block text-sm font-medium text-gray-300"
+        >
+          Certificate Image (thumbnail)
+        </label>
+
+        <div className="rounded-2xl border border-dashed border-slate-600 bg-slate-950/60 p-5">
+          {/* CURRENT IMAGE */}
+          {isEditing && editingCertificate.imageUrl && !imagePreview && (
+            <div className="mb-4 overflow-hidden rounded-xl border border-blue-500/20 bg-blue-500/5">
+              <img
+                src={editingCertificate.imageUrl}
+                alt="Current certificate thumbnail"
+                className="h-32 w-full object-cover"
+              />
+              <p className="p-3 text-xs text-gray-500">
+                Select a new image only if you want to replace this thumbnail.
+              </p>
+            </div>
+          )}
+
+          {/* IMAGE INPUT */}
+          <input
+            id="certificate-image"
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            disabled={loading}
+            className="block w-full text-sm text-gray-400 file:mr-4 file:rounded-lg file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          />
+
+          <p className="mt-3 text-xs text-gray-500">
+            JPG, PNG or WEBP. Maximum file size: 5 MB. Optional — a placeholder icon shows if left empty.
+          </p>
+
+          {isEditing && (
+            <p className="mt-1 text-xs text-gray-500">
+              Leave empty to keep the existing image.
+            </p>
+          )}
+
+          {/* SELECTED IMAGE PREVIEW */}
+          {imagePreview && (
+            <div className="mt-4 overflow-hidden rounded-xl border border-green-500/20 bg-green-500/5">
+              <img
+                src={imagePreview}
+                alt="Selected certificate thumbnail preview"
+                className="h-32 w-full object-cover"
+              />
+              <p className="p-3 text-xs text-green-400">
+                {imageFile?.name} — {(imageFile.size / 1024 / 1024).toFixed(2)} MB
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* PDF UPLOAD */}

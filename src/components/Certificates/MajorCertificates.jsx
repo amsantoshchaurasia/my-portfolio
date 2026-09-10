@@ -81,7 +81,7 @@ export default function MajorCertificates() {
   // ======================================================
 
   return (
-    <div className="mt-16">
+    <div className="mt-12 sm:mt-14 lg:mt-16">
 
       {/* HEADER */}
       <motion.div
@@ -99,19 +99,19 @@ export default function MajorCertificates() {
         transition={{
           duration: 0.5,
         }}
-        className="mb-10"
+        className="mb-8 sm:mb-10"
       >
-        <p className="text-xs font-semibold uppercase tracking-[4px] text-blue-400">
+        <p className="text-xs font-semibold uppercase tracking-[3px] sm:tracking-[4px] text-blue-400">
           Featured
         </p>
 
-        <h3 className="mt-2 text-3xl font-extrabold text-white">
+        <h3 className="mt-2 text-2xl sm:text-3xl font-extrabold text-white">
           Professional Certifications
         </h3>
 
-        <div className="mt-3 h-1 w-16 rounded-full bg-blue-500" />
+        <div className="mt-3 h-1 w-14 sm:w-16 rounded-full bg-blue-500" />
 
-        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-gray-400">
+        <p className="mt-3 sm:mt-4 max-w-2xl text-sm leading-relaxed text-gray-400">
           Industry-recognized certifications
           and virtual internship programs that
           demonstrate practical experience in
@@ -122,7 +122,7 @@ export default function MajorCertificates() {
 
       {/* LOADING */}
       {loading && (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((item) => (
             <div
               key={item}
@@ -185,8 +185,9 @@ export default function MajorCertificates() {
             className="
               grid
               items-stretch
-              gap-6
-              md:grid-cols-2
+              gap-5
+              sm:gap-6
+              sm:grid-cols-2
               lg:grid-cols-3
             "
           >
