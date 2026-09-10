@@ -8,7 +8,7 @@ import {
 
 export default function SocialIcons() {
   return (
-    <div className="flex items-center gap-4 text-2xl">
+    <div className="flex items-center gap-2 sm:gap-4 text-sm sm:text-xl lg:text-2xl">
 
       {/* GitHub */}
       <a
@@ -18,8 +18,9 @@ export default function SocialIcons() {
         aria-label="GitHub"
         className="
           flex
-          h-14
-          w-14
+          h-8 w-8
+          sm:h-12 sm:w-12
+          lg:h-14 lg:w-14
           shrink-0
           items-center
           justify-center
@@ -48,8 +49,9 @@ export default function SocialIcons() {
         aria-label="LinkedIn"
         className="
           flex
-          h-14
-          w-14
+          h-8 w-8
+          sm:h-12 sm:w-12
+          lg:h-14 lg:w-14
           shrink-0
           items-center
           justify-center
@@ -76,8 +78,9 @@ export default function SocialIcons() {
         aria-label="Email"
         className="
           flex
-          h-14
-          w-14
+          h-8 w-8
+          sm:h-12 sm:w-12
+          lg:h-14 lg:w-14
           shrink-0
           items-center
           justify-center

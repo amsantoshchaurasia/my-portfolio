@@ -82,7 +82,7 @@ export default function Navbar() {
 
   return (
     <header className="fixed top-0 left-0 w-full z-50 transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 xl:px-10">
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -109,14 +109,14 @@ export default function Navbar() {
             </motion.div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-8 xl:gap-9">
+            <nav className="hidden lg:flex items-center gap-3 xl:gap-9">
               {navLinks.map((item) => {
                 const isActive = active === item.id;
                 return (
                   <button
                     key={item.id}
                     onClick={() => handleScroll(item.id)}
-                    className={`relative pb-1 text-base font-medium transition duration-300 ${
+                    className={`relative pb-1 text-sm xl:text-base font-medium transition duration-300 whitespace-nowrap ${
                       isActive
                         ? "text-blue-500 font-semibold"
                         : "text-gray-300 hover:text-blue-400"
@@ -136,7 +136,7 @@ export default function Navbar() {
             <div className="hidden lg:block">
               <Button
                 onClick={handleDownloadResume}
-                className="transition-transform duration-300 hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(59,130,246,0.3)]"
+                className="transition-transform duration-300 hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(59,130,246,0.3)] whitespace-nowrap text-sm lg:text-sm xl:text-base px-3 lg:px-3 xl:px-6 py-2 lg:py-2 xl:py-3"
               >
                 Download Resume
               </Button>
