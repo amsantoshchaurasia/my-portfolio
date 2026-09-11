@@ -32,10 +32,10 @@ export default function AboutContent() {
   }
 
   return (
-    <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+    <div className="grid lg:grid-cols-12 gap-6 sm:gap-8 md:gap-10 lg:gap-12 xl:gap-16 items-center">
       {/* Profile Image - Optimized with subtle glowing frame */}
       <div className="lg:col-span-5 flex justify-center">
-        <div className="relative w-56 h-56 sm:w-64 sm:h-64 lg:w-72 lg:h-72 rounded-2xl overflow-hidden border border-blue-500/30 shadow-[0_0_30px_rgba(37,99,235,0.15)] bg-slate-900">
+        <div className="relative w-44 h-44 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 xl:w-80 xl:h-80 rounded-2xl overflow-hidden border border-blue-500/30 shadow-[0_0_30px_rgba(37,99,235,0.15)] bg-slate-900">
           <img
             src={about?.imageUrl || profile}
             alt="Santosh Chaurasia"
@@ -45,19 +45,19 @@ export default function AboutContent() {
       </div>
 
       {/* Content */}
-      <div className="lg:col-span-7">
-        <h3 className="text-2xl sm:text-3xl font-bold mb-3 text-white tracking-tight">
+      <div className="lg:col-span-7 text-left mt-6 lg:mt-0">
+        <h3 className="text-xl sm:text-2xl md:text-3xl xl:text-4xl font-bold mb-3 text-white tracking-tight">
           {about?.heading || "Hi, I'm Santosh Chaurasia"}
         </h3>
 
-        <p className="text-gray-300 leading-relaxed text-sm sm:text-base font-normal">
+        <p className="text-gray-300 leading-relaxed text-sm sm:text-base xl:text-lg font-normal">
           {about?.description ||
             "A dedicated IT professional and Data Science student with hands-on expertise in Python, SQL, Excel, and Power BI. Passionate about transforming complex data into clear insights and building modern web applications."}
         </p>
 
         {/* Additional Information Cards */}
-        <div className="mt-6 grid sm:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur-sm transition hover:border-blue-500/50">
+        <div className="mt-5 sm:mt-6 grid sm:grid-cols-2 gap-3 sm:gap-4 text-left">
+          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 sm:p-4 backdrop-blur-sm transition hover:border-blue-500/50">
             <p className="text-xs uppercase tracking-wider text-blue-400 font-medium">
               Role
             </p>
@@ -66,7 +66,7 @@ export default function AboutContent() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur-sm transition hover:border-blue-500/50">
+          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 sm:p-4 backdrop-blur-sm transition hover:border-blue-500/50">
             <p className="text-xs uppercase tracking-wider text-blue-400 font-medium">
               Location
             </p>
@@ -77,13 +77,25 @@ export default function AboutContent() {
         </div>
 
         {/* Short Bio */}
-        {about?.shortBio && (
-          <div className="mt-5 pt-4 border-t border-slate-800/80">
-            <p className="text-xs sm:text-sm text-gray-400 font-medium tracking-wide">
-              {about.shortBio}
-            </p>
-          </div>
-        )}
+        {about?.shortBio && (() => {
+          const bioParts = about.shortBio.split("|").map((p) => p.trim());
+          // Custom order requested: IT Helpdesk Executive, BSc IT Graduate,
+          // M.Sc. Data Science Student — as one line that wraps naturally
+          // based on available width (2 lines on narrow mobile, 1 line
+          // once there's enough room).
+          const orderedBio =
+            bioParts.length === 3
+              ? `${bioParts[2]} | ${bioParts[0]} | ${bioParts[1]}`
+              : about.shortBio;
+
+          return (
+            <div className="mt-4 sm:mt-5 pt-4 border-t border-slate-800/80 text-center lg:text-left">
+              <p className="text-xs sm:text-sm text-gray-400 font-medium tracking-wide">
+                {orderedBio}
+              </p>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

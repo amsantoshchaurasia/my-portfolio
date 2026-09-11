@@ -89,9 +89,9 @@ export default function Navbar() {
           transition={{ duration: 0.5 }}
           className={`transition-all duration-500 rounded-2xl border ${
             scrolled
-              ? "mt-3 bg-slate-950/80 border-slate-700/60 shadow-[0_10px_30px_rgba(0,0,0,0.5)] py-2.5"
-              : "mt-5 bg-slate-900/60 border-slate-700/40 shadow-[0_8px_25px_rgba(0,0,0,0.3)] py-3.5"
-          } backdrop-blur-2xl`}
+              ? "mt-3 bg-slate-950 border-slate-700/60 shadow-[0_10px_30px_rgba(0,0,0,0.5)] py-2.5"
+              : "mt-5 bg-slate-900 border-slate-700/40 shadow-[0_8px_25px_rgba(0,0,0,0.3)] py-3.5"
+          }`}
         >
           <div className="px-6 sm:px-8 flex items-center justify-between">
             

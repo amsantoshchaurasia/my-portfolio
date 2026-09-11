@@ -9,6 +9,8 @@ import { motion } from "framer-motion";
 import { getResumeURL } from "../../firebase/storage";
 import { getHeroData } from "../../firebase/firestore";
 
+const GREETING_TEXT = "HELLO I'M";
+
 export default function Hero() {
   const [resumeData, setResumeData] = useState(null);
   const [heroData, setHeroData] = useState({
@@ -18,6 +20,24 @@ export default function Hero() {
     description: "Passionate Data Analyst with expertise in Python, SQL, Excel, Power BI and React.",
     imageUrl: "",
   });
+
+  // Typewriter effect for the "HELLO I'M" greeting
+  const [typedGreeting, setTypedGreeting] = useState("");
+
+  useEffect(() => {
+    let index = 0;
+
+    const interval = setInterval(() => {
+      index += 1;
+      setTypedGreeting(GREETING_TEXT.slice(0, index));
+
+      if (index >= GREETING_TEXT.length) {
+        clearInterval(interval);
+      }
+    }, 160);
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     async function fetchHeroData() {
@@ -70,7 +90,7 @@ export default function Hero() {
 
             {/* LEFT SIDE */}
             <div className="flex flex-col items-center text-center lg:items-start lg:text-left order-2 lg:order-1">
-              {/* Greeting */}
+              {/* Greeting - typewriter effect */}
               <motion.div
                 initial={{ opacity: 0, x: -40 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -78,8 +98,11 @@ export default function Hero() {
                 className="flex items-center gap-2 sm:gap-4 mb-1.5 sm:mb-5"
               >
                 <div className="w-8 sm:w-14 h-[2px] bg-blue-500"></div>
-                <span className="uppercase tracking-[3px] sm:tracking-[8px] text-blue-400 text-[10px] sm:text-sm font-semibold">
-                  HELLO I'M
+                <span className="uppercase tracking-[3px] sm:tracking-[8px] text-blue-400 text-xs sm:text-base font-semibold inline-flex items-center">
+                  {typedGreeting}
+                  {typedGreeting.length < GREETING_TEXT.length && (
+                    <span className="ml-0.5 inline-block h-[0.9em] w-[2px] animate-pulse bg-blue-400" />
+                  )}
                 </span>
               </motion.div>
 
@@ -89,7 +112,7 @@ export default function Hero() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15, duration: 0.9, ease: "easeOut" }}
               >
-                <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-7xl xl:text-8xl 2xl:text-8xl font-black tracking-tight leading-tight sm:leading-none">
+                <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-6xl 2xl:text-7xl font-black tracking-tight leading-tight sm:leading-none">
                   <div className="text-white mb-0 sm:mb-2">
                     {(heroData.firstName || "").toUpperCase()}
                   </div>

@@ -14,7 +14,6 @@ const initialForm = {
   company: "",
   year: "",
   type: "major",
-  description: "",
   order: 1,
 };
 
@@ -118,7 +117,6 @@ export default function CertificatesForm({
         company: editingCertificate.company || "",
         year: editingCertificate.year || "",
         type: editingCertificate.type || "major",
-        description: editingCertificate.description || "",
         order: editingCertificate.order || 1,
       });
 
@@ -339,7 +337,6 @@ export default function CertificatesForm({
         company: form.company.trim(),
         year: form.year.trim(),
         type: form.type,
-        description: form.description.trim(),
         order: Number(form.order) || 1,
       };
 
@@ -487,7 +484,7 @@ export default function CertificatesForm({
         </h3>
 
         <p className="mt-2 text-sm text-gray-500">
-          Upload your certificate PDF directly via Cloudinary.
+          Upload your certificate PDF and thumbnail image via Cloudinary.
         </p>
       </div>
 
@@ -593,23 +590,6 @@ export default function CertificatesForm({
             className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
           />
         </div>
-      </div>
-
-      {/* DESCRIPTION */}
-      <div>
-        <label className="mb-2 block text-sm font-medium text-gray-300">
-          Description
-        </label>
-
-        <textarea
-          name="description"
-          value={form.description}
-          onChange={handleChange}
-          rows={5}
-          placeholder="Describe what was completed..."
-          disabled={loading}
-          className="w-full resize-none rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
-        />
       </div>
 
       {/* CERTIFICATE IMAGE (THUMBNAIL) */}
