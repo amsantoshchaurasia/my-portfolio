@@ -149,13 +149,13 @@ export default function Hero() {
                 transition={{ delay: 1, duration: 0.7 }}
                 className="flex flex-wrap justify-center lg:justify-start gap-2 sm:gap-4 mt-3 sm:mt-8"
               >
-                <Button icon onClick={handleDownloadResume} className="text-xs sm:text-base px-3 sm:px-6 py-2 sm:py-3">
+                <Button icon onClick={handleDownloadResume} className="text-xs sm:text-base px-4 sm:px-6 py-1.5 sm:py-3">
                   Download Resume
                 </Button>
 
                 <Button
                   variant="outline"
-                  className="text-xs sm:text-base px-3 sm:px-6 py-2 sm:py-3"
+                  className="text-xs sm:text-base px-4 sm:px-6 py-1.5 sm:py-3"
                   onClick={() =>
                     document
                       .getElementById("contact")
@@ -181,9 +181,9 @@ export default function Hero() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Instagram"
-                  className="flex h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 shrink-0 items-center justify-center rounded-full border border-slate-700 bg-slate-900/40 text-gray-200 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-pink-500 hover:bg-pink-500 hover:text-white hover:scale-110"
+                  className="flex h-9 w-9 sm:h-12 sm:w-12 lg:h-14 lg:w-14 shrink-0 items-center justify-center rounded-full border border-slate-700 bg-slate-900/40 text-gray-200 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-pink-500 hover:bg-pink-500 hover:text-white hover:scale-110"
                 >
-                  <FaInstagram size={14} className="sm:hidden" />
+                  <FaInstagram size={17} className="sm:hidden" />
                   <FaInstagram size={22} className="hidden sm:block" />
                 </a>
 
@@ -193,9 +193,9 @@ export default function Hero() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Facebook"
-                  className="flex h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 shrink-0 items-center justify-center rounded-full border border-slate-700 bg-slate-900/40 text-gray-200 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-blue-500 hover:bg-blue-600 hover:text-white hover:scale-110"
+                  className="flex h-9 w-9 sm:h-12 sm:w-12 lg:h-14 lg:w-14 shrink-0 items-center justify-center rounded-full border border-slate-700 bg-slate-900/40 text-gray-200 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-blue-500 hover:bg-blue-600 hover:text-white hover:scale-110"
                 >
-                  <FaFacebook size={14} className="sm:hidden" />
+                  <FaFacebook size={17} className="sm:hidden" />
                   <FaFacebook size={22} className="hidden sm:block" />
                 </a>
               </motion.div>

@@ -49,7 +49,7 @@ export default function AboutStats() {
   }
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6 mt-8 sm:mt-10 md:mt-12 lg:mt-14 xl:mt-16">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6 mt-8 sm:mt-10 md:mt-12 lg:mt-14 xl:mt-6">
       {statsList.map((item) => (
         <div
           key={item.title}
@@ -57,7 +57,7 @@ export default function AboutStats() {
             bg-slate-900/60
             backdrop-blur-sm
             rounded-2xl
-            p-4 sm:p-5 md:p-6
+            p-4 sm:p-5 md:p-6 xl:p-4
             border
             border-slate-800
             text-center
@@ -68,7 +68,7 @@ export default function AboutStats() {
             group
           "
         >
-          <h2 className="text-2xl sm:text-3xl md:text-4xl xl:text-5xl font-black text-blue-500 group-hover:scale-105 transition-transform duration-300">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl xl:text-4xl font-black text-blue-500 group-hover:scale-105 transition-transform duration-300">
             {item.number}
           </h2>
           <p className="mt-1 sm:mt-1.5 text-xs sm:text-sm text-gray-400 font-medium uppercase tracking-wider">

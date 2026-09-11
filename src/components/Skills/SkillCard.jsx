@@ -6,53 +6,44 @@ export default function SkillCard({ skill }) {
       className="
         group
         flex
-        flex-col
         items-center
-        justify-center
-        gap-2.5
-        sm:gap-3
-        rounded-2xl
+        gap-3
+        sm:gap-3.5
+        rounded-xl
         border
-        border-slate-700/70
-        bg-gradient-to-b
-        from-slate-900/80
-        to-slate-900/40
-        p-4
-        sm:p-5
-        text-center
+        border-slate-700/80
+        bg-slate-900/70
+        p-3
+        sm:p-4
         transition-all
         duration-300
         hover:-translate-y-1
-        hover:border-blue-500/60
-        hover:shadow-[0_8px_24px_rgba(37,99,235,0.15)]
+        hover:border-blue-500/50
+        hover:bg-slate-800/80
+        hover:shadow-md
       "
     >
       {/* Icon */}
       <div
         className="
           flex
-          h-11
-          w-11
-          sm:h-12
-          sm:w-12
-          md:h-14
-          md:w-14
+          h-10
+          w-10
+          sm:h-11
+          sm:w-11
           shrink-0
           items-center
           justify-center
-          rounded-xl
-          bg-slate-800/80
-          ring-1
-          ring-slate-700/50
+          rounded-lg
+          bg-slate-800
           transition-transform
           duration-300
           group-hover:scale-110
-          group-hover:ring-blue-500/40
         "
       >
         {Icon ? (
           <Icon
-            className={`text-xl sm:text-2xl md:text-3xl ${skill.color || "text-blue-400"}`}
+            className={`text-xl sm:text-2xl ${skill.color || "text-blue-400"}`}
           />
         ) : (
           <span className="text-base sm:text-lg font-bold text-gray-400">
@@ -62,9 +53,11 @@ export default function SkillCard({ skill }) {
       </div>
 
       {/* Skill Name */}
-      <h3 className="text-xs sm:text-sm md:text-base font-semibold text-white tracking-wide leading-tight">
-        {skill.name}
-      </h3>
+      <div className="flex-1 min-w-0">
+        <h3 className="text-sm sm:text-base font-semibold text-white tracking-wide truncate">
+          {skill.name}
+        </h3>
+      </div>
     </div>
   );
 }

@@ -149,7 +149,7 @@ export default function Skills() {
   return (
     <section
       id="skills"
-      className="py-10 sm:py-14 md:py-16 lg:py-20 xl:py-24 scroll-mt-20"
+      className="scroll-mt-8 sm:scroll-mt-12 lg:scroll-mt-16 py-16 sm:py-20 lg:py-24"
     >
       <Container>
         <SectionAnimation>
@@ -160,15 +160,15 @@ export default function Skills() {
 
           <div className="mx-auto max-w-3xl text-center">
 
-            <p className="text-xs sm:text-sm font-semibold uppercase tracking-[4px] sm:tracking-[6px] md:tracking-[8px] text-blue-400">
+            <p className="text-xs sm:text-sm font-semibold uppercase tracking-[4px] sm:tracking-[8px] text-blue-400">
               Skills
             </p>
 
-            <h2 className="mt-2 sm:mt-3 md:mt-4 text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white">
+            <h2 className="mt-3 sm:mt-4 text-3xl sm:text-4xl md:text-5xl font-black text-white">
               Technical Skills
             </h2>
 
-            <p className="mt-3 sm:mt-4 md:mt-6 text-sm sm:text-base md:text-lg leading-6 sm:leading-7 md:leading-8 text-gray-400">
+            <p className="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-gray-400 px-2">
               Technologies, programming languages and
               tools that I use for Data Analytics and
               Web Development.
@@ -182,9 +182,9 @@ export default function Skills() {
           ======================================== */}
 
           {analytics.length > 0 && (
-            <div className="mt-10 sm:mt-12 md:mt-14 lg:mt-16">
+            <div className="mt-12 sm:mt-14 lg:mt-16">
 
-              <h3 className="mb-4 sm:mb-6 md:mb-8 text-lg sm:text-xl md:text-2xl font-bold text-white">
+              <h3 className="mb-6 sm:mb-8 text-xl sm:text-2xl font-bold text-white">
                 Data Analytics
               </h3>
 
@@ -208,9 +208,9 @@ export default function Skills() {
           ======================================== */}
 
           {web.length > 0 && (
-            <div className="mt-10 sm:mt-12 md:mt-14 lg:mt-16">
+            <div className="mt-12 sm:mt-14 lg:mt-16">
 
-              <h3 className="mb-4 sm:mb-6 md:mb-8 text-lg sm:text-xl md:text-2xl font-bold text-white">
+              <h3 className="mb-6 sm:mb-8 text-xl sm:text-2xl font-bold text-white">
                 Web Development
               </h3>
 
@@ -234,9 +234,9 @@ export default function Skills() {
           ======================================== */}
 
           {tools.length > 0 && (
-            <div className="mt-10 sm:mt-12 md:mt-14 lg:mt-16">
+            <div className="mt-12 sm:mt-14 lg:mt-16">
 
-              <h3 className="mb-4 sm:mb-6 md:mb-8 text-lg sm:text-xl md:text-2xl font-bold text-white">
+              <h3 className="mb-6 sm:mb-8 text-xl sm:text-2xl font-bold text-white">
                 Tools & Technologies
               </h3>
 
@@ -260,7 +260,7 @@ export default function Skills() {
           ======================================== */}
 
           {skills.length === 0 && (
-            <div className="mt-10 sm:mt-12 md:mt-16 text-center text-gray-400">
+            <div className="mt-12 sm:mt-16 text-center text-gray-400">
               No skills found.
             </div>
           )}
