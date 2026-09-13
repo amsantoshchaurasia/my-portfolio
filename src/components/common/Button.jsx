@@ -12,7 +12,7 @@ export default function Button({
     "bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 text-white shadow-[0_10px_35px_rgba(37,99,235,.35)] hover:shadow-[0_15px_45px_rgba(37,99,235,.55)]";
 
   const outline =
-    "border border-blue-500/60 bg-white/5 backdrop-blur-md text-white hover:bg-blue-500 hover:border-blue-500 hover:shadow-[0_12px_35px_rgba(37,99,235,.35)]";
+    "border-2 border-blue-400 bg-white/10 backdrop-blur-md text-white hover:bg-blue-500 hover:border-blue-500 hover:shadow-[0_12px_35px_rgba(37,99,235,.35)]";
 
   return (
     <motion.button
@@ -35,13 +35,10 @@ export default function Button({
         justify-center
         gap-2
 
-        px-7
-        py-3.5
-
-        rounded-2xl
+        rounded-xl
+        sm:rounded-2xl
 
         font-semibold
-        text-[15px]
 
         transition-all
         duration-300
@@ -60,7 +57,7 @@ export default function Button({
       {icon && (
         <HiArrowRight
           className="
-            text-lg
+            text-[1.15em]
             transition-transform
             duration-300
             group-hover:translate-x-1

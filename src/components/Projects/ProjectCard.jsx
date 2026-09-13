@@ -8,11 +8,14 @@ export default function ProjectCard({
   return (
     <div
       className="
-        rounded-3xl
+        rounded-2xl
+        sm:rounded-3xl
         bg-[#111827]
         border
         border-slate-700
-        p-6
+        p-4
+        sm:p-5
+        md:p-6
 
         flex
         flex-col
@@ -29,17 +32,17 @@ export default function ProjectCard({
           PROJECT CONTENT
       ======================================== */}
 
-      <div>
+      <div className="flex flex-col h-full">
 
         {/* Header */}
 
         <div className="flex items-center justify-between">
 
-          <span className="uppercase tracking-[4px] text-xs text-gray-500">
+          <span className="uppercase tracking-[2px] sm:tracking-[4px] text-[10px] sm:text-xs text-gray-500">
             Project
           </span>
 
-          <span className="bg-blue-600/20 text-blue-400 text-sm px-3 py-1 rounded-full">
+          <span className="bg-blue-600/20 text-blue-400 text-xs sm:text-sm px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full">
             {project.year}
           </span>
 
@@ -50,8 +53,16 @@ export default function ProjectCard({
 
         <h3
           className="
-            mt-5
-            text-2xl
+            mt-3
+            sm:mt-4
+            md:mt-5
+            lg:mt-3
+            xl:mt-5
+            text-lg
+            sm:text-xl
+            md:text-2xl
+            lg:text-xl
+            xl:text-2xl
             font-bold
             leading-tight
           "
@@ -64,9 +75,14 @@ export default function ProjectCard({
 
         <p
           className="
-            mt-4
+            mt-2.5
+            sm:mt-3
+            md:mt-4
+            text-sm
+            sm:text-base
             text-gray-400
-            leading-6
+            leading-5
+            sm:leading-6
             line-clamp-3
           "
         >
@@ -78,7 +94,7 @@ export default function ProjectCard({
             TECHNOLOGIES
         ======================================== */}
 
-        <div className="flex flex-wrap gap-2.5 mt-5">
+        <div className="flex flex-wrap gap-2 sm:gap-2.5 mt-4 sm:mt-5">
 
           {project.technologies?.map((tech) => (
             <TechBadge
@@ -98,15 +114,18 @@ export default function ProjectCard({
           className="
             grid
             grid-cols-2
-            gap-3
-            mt-5
+            gap-2.5
+            sm:gap-3
+            pt-4
+            sm:pt-5
+            mt-auto
           "
         >
 
           {/* GitHub */}
 
           <Button
-            className="w-full justify-center"
+            className="text-xs sm:text-sm lg:text-[11px] xl:text-sm px-3 sm:px-4 lg:px-2 xl:px-4 py-2 sm:py-2.5 lg:py-2 xl:py-2.5 w-full justify-center whitespace-nowrap"
             onClick={() => {
               if (project.github) {
                 window.open(
@@ -125,7 +144,7 @@ export default function ProjectCard({
 
           <Button
             variant="outline"
-            className="w-full justify-center"
+            className="text-xs sm:text-sm lg:text-[11px] xl:text-sm px-3 sm:px-4 lg:px-2 xl:px-4 py-2 sm:py-2.5 lg:py-2 xl:py-2.5 w-full justify-center whitespace-nowrap"
             onClick={onView}
           >
             View Details

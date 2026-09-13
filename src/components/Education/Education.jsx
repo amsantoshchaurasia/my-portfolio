@@ -157,7 +157,7 @@ export default function Education() {
   return (
     <section
       id="education"
-      className="bg-[#0B1120] text-white py-24"
+      className="bg-[#0B1120] text-white scroll-mt-16 sm:scroll-mt-13 md:scroll-mt-21 lg:scroll-mt-14 xl:scroll-mt-15 pt-6 sm:pt-12 md:pt-6 lg:pt-8 xl:pt-10 pb-10 sm:pb-20 lg:pb-24"
     >
       <Container>
 
@@ -167,17 +167,17 @@ export default function Education() {
               HEADING
           ================================================== */}
 
-          <div className="text-center max-w-4xl mx-auto">
+          <div className="text-center max-w-xl sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto">
 
-            <p className="uppercase tracking-[8px] text-blue-400 font-semibold text-sm">
+            <p className="uppercase tracking-[3px] sm:tracking-[8px] text-blue-400 font-semibold text-[11px] sm:text-sm">
               Academics
             </p>
 
-            <h2 className="mt-4 text-5xl font-black">
+            <h2 className="mt-2 sm:mt-4 text-2xl sm:text-4xl md:text-5xl font-black">
               Education
             </h2>
 
-            <p className="mt-6 text-lg text-gray-400 leading-8">
+            <p className="mt-3 sm:mt-6 text-xs sm:text-base md:text-lg text-gray-400 leading-5 sm:leading-7 md:leading-8 px-2">
               My academic journey and educational background.
             </p>
 
@@ -188,9 +188,9 @@ export default function Education() {
           ================================================== */}
 
           {loading && (
-            <div className="max-w-6xl mx-auto mt-20 text-center">
+            <div className="max-w-6xl mx-auto mt-12 sm:mt-16 md:mt-20 text-center">
 
-              <p className="text-gray-400">
+              <p className="text-sm sm:text-base text-gray-400">
                 Loading education...
               </p>
 
@@ -209,7 +209,7 @@ export default function Education() {
               ================================================== */}
 
               {higherEducation.length > 0 && (
-                <div className="max-w-6xl mx-auto mt-20">
+                <div className="max-w-3xl lg:max-w-[52rem] xl:max-w-4xl 2xl:max-w-5xl mx-auto mt-6 sm:mt-10 md:mt-8 lg:mt-10">
 
                   {higherEducation.map(
                     (item) => (
@@ -225,31 +225,26 @@ export default function Education() {
 
               {/* ==================================================
                   SCHOOL EDUCATION
+                  (EducationCard already draws its own timeline
+                  line + dot, so no extra wrapper/line needed here
+                  — avoids double-indent and overlapping lines.)
               ================================================== */}
 
               {schoolEducation.length > 0 && (
-                <div className="max-w-6xl mx-auto mt-10">
+                <div className="max-w-3xl lg:max-w-[52rem] xl:max-w-4xl 2xl:max-w-5xl mx-auto mt-6 sm:mt-10">
 
-                  <h3 className="text-3xl font-bold text-center mb-12">
+                  <h3 className="text-lg sm:text-2xl md:text-3xl font-bold text-center mb-5 sm:mb-10 md:mb-12">
                     School Education
                   </h3>
 
-                  <div className="relative pl-12">
-
-                    {/* Timeline */}
-
-                    <div className="absolute left-4 top-0 w-[2px] h-full bg-blue-600"></div>
-
-                    {schoolEducation.map(
-                      (item) => (
-                        <EducationCard
-                          key={item.id}
-                          item={item}
-                        />
-                      )
-                    )}
-
-                  </div>
+                  {schoolEducation.map(
+                    (item) => (
+                      <EducationCard
+                        key={item.id}
+                        item={item}
+                      />
+                    )
+                  )}
 
                 </div>
               )}
@@ -259,9 +254,9 @@ export default function Education() {
               ================================================== */}
 
               {educations.length === 0 && (
-                <div className="max-w-6xl mx-auto mt-20 text-center">
+                <div className="max-w-6xl mx-auto mt-12 sm:mt-16 md:mt-20 text-center">
 
-                  <p className="text-gray-400">
+                  <p className="text-sm sm:text-base text-gray-400">
                     No education information available.
                   </p>
 

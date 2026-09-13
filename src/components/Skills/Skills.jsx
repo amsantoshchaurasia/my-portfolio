@@ -149,7 +149,7 @@ export default function Skills() {
   return (
     <section
       id="skills"
-      className="scroll-mt-8 sm:scroll-mt-12 lg:scroll-mt-16 py-16 sm:py-20 lg:py-24"
+      className="scroll-mt-16 sm:scroll-mt-12 lg:scroll-mt-13 xl:scroll-mt-17 pt-6 sm:pt-14 md:pt-16 lg:pt-8 xl:pt-10 pb-16 sm:pb-20 lg:pb-24"
     >
       <Container>
         <SectionAnimation>
@@ -164,11 +164,11 @@ export default function Skills() {
               Skills
             </p>
 
-            <h2 className="mt-3 sm:mt-4 text-3xl sm:text-4xl md:text-5xl font-black text-white">
+            <h2 className="mt-3 sm:mt-4 text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white">
               Technical Skills
             </h2>
 
-            <p className="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-gray-400 px-2">
+            <p className="mt-3 sm:mt-6 text-xs sm:text-base md:text-lg leading-5 sm:leading-7 md:leading-8 text-gray-400 px-2">
               Technologies, programming languages and
               tools that I use for Data Analytics and
               Web Development.
@@ -182,7 +182,7 @@ export default function Skills() {
           ======================================== */}
 
           {analytics.length > 0 && (
-            <div className="mt-12 sm:mt-14 lg:mt-16">
+            <div className="mt-6 sm:mt-14 lg:mt-16">
 
               <h3 className="mb-6 sm:mb-8 text-xl sm:text-2xl font-bold text-white">
                 Data Analytics
@@ -208,7 +208,7 @@ export default function Skills() {
           ======================================== */}
 
           {web.length > 0 && (
-            <div className="mt-12 sm:mt-14 lg:mt-16">
+            <div className="mt-6 sm:mt-14 lg:mt-16">
 
               <h3 className="mb-6 sm:mb-8 text-xl sm:text-2xl font-bold text-white">
                 Web Development
@@ -234,7 +234,7 @@ export default function Skills() {
           ======================================== */}
 
           {tools.length > 0 && (
-            <div className="mt-12 sm:mt-14 lg:mt-16">
+            <div className="mt-6 sm:mt-14 lg:mt-16">
 
               <h3 className="mb-6 sm:mb-8 text-xl sm:text-2xl font-bold text-white">
                 Tools & Technologies

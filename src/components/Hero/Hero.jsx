@@ -147,15 +147,15 @@ export default function Hero() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1, duration: 0.7 }}
-                className="flex flex-wrap justify-center lg:justify-start gap-2 sm:gap-4 mt-3 sm:mt-8"
+                className="flex flex-wrap justify-center lg:justify-start gap-3 sm:gap-4 mt-3 sm:mt-8"
               >
-                <Button icon onClick={handleDownloadResume} className="text-xs sm:text-base px-4 sm:px-6 py-1.5 sm:py-3">
+                <Button icon onClick={handleDownloadResume} className="text-[11px] sm:text-base px-4 sm:px-6 py-1.5 sm:py-3 tracking-wide">
                   Download Resume
                 </Button>
 
                 <Button
                   variant="outline"
-                  className="text-xs sm:text-base px-4 sm:px-6 py-1.5 sm:py-3"
+                  className="text-[11px] sm:text-base px-4 sm:px-6 py-1.5 sm:py-3 tracking-wide"
                   onClick={() =>
                     document
                       .getElementById("contact")

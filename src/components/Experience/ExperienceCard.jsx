@@ -1,99 +1,132 @@
+import { HiBriefcase, HiOutlineCalendar, HiOutlineLocationMarker, HiCheckCircle } from "react-icons/hi";
+
 export default function ExperienceCard({
   item,
   isLast,
 }) {
+  // ========================================
+  // LIMIT BULLET POINTS TO 4 FOR A CLEAN,
+  // SCANNABLE, PROFESSIONAL LOOK
+  // ========================================
+
+  const visiblePoints = Array.isArray(item.points)
+    ? item.points.slice(0, 4)
+    : [];
+
   return (
-    <div className="relative pb-12 pl-10 sm:pl-12">
+    <div className="relative pb-8 sm:pb-10 md:pb-12 pl-9 sm:pl-10 md:pl-12">
 
       {/* TIMELINE LINE */}
 
       {!isLast && (
-        <div className="absolute left-3 top-4 h-full w-[2px] bg-gradient-to-b from-blue-500 to-slate-700 sm:left-4"></div>
+        <div className="absolute left-2.5 sm:left-3 md:left-4 top-4 h-full w-[2px] bg-gradient-to-b from-blue-500 to-slate-700"></div>
       )}
 
       {/* TIMELINE DOT */}
 
-      <div className="absolute left-1.5 top-1.5 h-4 w-4 rounded-full border-4 border-[#0B1120] bg-blue-500 shadow-[0_0_10px_rgba(37,99,235,0.8)] sm:left-2.5"></div>
+      <div className="absolute left-1 sm:left-1.5 md:left-2.5 top-1.5 h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4 rounded-full border-[3px] sm:border-4 border-[#0B1120] bg-blue-500 shadow-[0_0_10px_rgba(37,99,235,0.8)]"></div>
 
       {/* CARD */}
 
       <div
         className="
-          rounded-3xl
+          relative
+          overflow-hidden
+          rounded-2xl
+          sm:rounded-3xl
           border
           border-slate-700
           bg-[#111827]
-          p-6
+          pl-4
+          pr-4
+          py-4
+          sm:pl-8
+          sm:pr-6
+          sm:py-6
+          md:pl-10
+          md:pr-8
+          md:py-8
           transition-all
           duration-300
           hover:-translate-y-1
           hover:border-blue-500
           hover:shadow-[0_0_35px_rgba(37,99,235,.20)]
-          sm:p-8
         "
       >
 
-        {/* COMPANY + PERIOD */}
+        {/* LEFT ACCENT BAR - hidden on mobile (size 1), visible from sm up */}
+        <div className="hidden sm:block absolute left-0 top-0 h-full w-1.5 bg-gradient-to-b from-blue-500 to-cyan-400" />
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        {/* TOP ROW: ICON + COMPANY/ROLE + PERIOD */}
 
-          <h3 className="text-2xl font-bold text-white sm:text-3xl">
-            {item.company}
-          </h3>
+        <div className="flex items-start gap-2.5 sm:gap-4">
 
-          {item.period && (
-            <span className="inline-block w-fit rounded-full border border-blue-500/30 bg-blue-600/10 px-3 py-1 text-xs font-semibold text-blue-400">
-              {item.period}
-            </span>
-          )}
+          {/* Company Icon Badge */}
+          <div className="flex h-8 w-8 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-lg sm:rounded-2xl bg-blue-600/15 border border-blue-500/30 text-blue-400 text-sm sm:text-xl">
+            <HiBriefcase />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <h3 className="text-base sm:text-xl md:text-2xl font-bold text-white leading-snug">
+              {item.company}
+            </h3>
+
+            <div className="mt-1 sm:mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+              <p className="text-sm sm:text-base font-medium text-blue-300">
+                {item.role}
+              </p>
+
+              {item.period && (
+                <>
+                  <span className="hidden sm:inline text-slate-600">•</span>
+                  <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-gray-500">
+                    <HiOutlineCalendar className="text-sm" />
+                    {item.period}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
 
         </div>
-
-        {/* ROLE */}
-
-        <p className="mt-2 text-lg font-medium text-gray-300">
-          {item.role}
-        </p>
 
         {/* LOCATION */}
 
         {item.location && (
-          <p className="mt-1 text-sm text-gray-500">
-            {item.location}
-          </p>
+          <div className="mt-2.5 sm:mt-4 flex items-center gap-1.5 text-xs sm:text-sm text-gray-500">
+            <HiOutlineLocationMarker className="text-sm sm:text-base" />
+            <span>{item.location}</span>
+          </div>
         )}
 
-        {/* POINTS */}
+        {/* POINTS (max 4 shown) */}
 
-        {Array.isArray(item.points) &&
-          item.points.length > 0 && (
+        {visiblePoints.length > 0 && (
 
-            <ul className="mt-6 space-y-3 text-gray-400">
+          <ul className="mt-4 sm:mt-6 space-y-2.5 sm:space-y-3.5 text-gray-400 border-t border-slate-700/60 pt-3.5 sm:pt-5">
 
-              {item.points.map(
-                (point, index) => (
+            {visiblePoints.map(
+              (point, index) => (
 
-                  <li
-                    key={`${item.id}-${index}`}
-                    className="flex items-start gap-3"
-                  >
+                <li
+                  key={`${item.id}-${index}`}
+                  className="flex items-start gap-2 sm:gap-3"
+                >
 
-                    <span className="mt-1.5 text-xs text-blue-500">
-                      ■
-                    </span>
+                  <HiCheckCircle className="mt-0.5 h-3.5 w-3.5 sm:h-5 sm:w-5 shrink-0 text-blue-500" />
 
-                    <span className="leading-relaxed">
-                      {point}
-                    </span>
+                  <span className="text-sm sm:text-base leading-relaxed">
+                    {point}
+                  </span>
 
-                  </li>
+                </li>
 
-                )
-              )}
+              )
+            )}
 
-            </ul>
+          </ul>
 
-          )}
+        )}
 
       </div>
 

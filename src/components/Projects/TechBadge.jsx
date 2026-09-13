@@ -3,12 +3,15 @@ export default function TechBadge({ name }) {
 
     <span
       className="
-      px-4
-      py-2
+      px-2.5
+      py-1
+      sm:px-4
+      sm:py-2
 
       rounded-full
 
-      text-sm
+      text-xs
+      sm:text-sm
       font-medium
 
       bg-blue-600/10

@@ -81,81 +81,96 @@ export default function Navbar() {
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full z-50 transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 xl:px-10">
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className={`transition-all duration-500 rounded-2xl border ${
-            scrolled
-              ? "mt-3 bg-slate-950 border-slate-700/60 shadow-[0_10px_30px_rgba(0,0,0,0.5)] py-2.5"
-              : "mt-5 bg-slate-900 border-slate-700/40 shadow-[0_8px_25px_rgba(0,0,0,0.3)] py-3.5"
-          }`}
-        >
-          <div className="px-6 sm:px-8 flex items-center justify-between">
-            
-            {/* Logo */}
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="cursor-pointer"
-              onClick={() => handleScroll("home")}
-            >
-              <h1 className="text-2xl font-black tracking-wider">
-                <span className="text-white">Santosh</span>
-                <span className="text-blue-500 drop-shadow-[0_0_10px_rgba(59,130,246,0.8)]">.</span>
-              </h1>
-            </motion.div>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-3 xl:gap-9">
-              {navLinks.map((item) => {
-                const isActive = active === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleScroll(item.id)}
-                    className={`relative pb-1 text-sm xl:text-base font-medium transition duration-300 whitespace-nowrap ${
-                      isActive
-                        ? "text-blue-500 font-semibold"
-                        : "text-gray-300 hover:text-blue-400"
-                    }`}
-                  >
-                    {item.name}
-
-                    {isActive && (
-                      <span className="absolute left-0 -bottom-1 h-[2px] w-full rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-
-            {/* Resume Button */}
-            <div className="hidden lg:block">
-              <Button
-                onClick={handleDownloadResume}
-                className="transition-transform duration-300 hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(59,130,246,0.3)] whitespace-nowrap text-sm lg:text-sm xl:text-base px-3 lg:px-3 xl:px-6 py-2 lg:py-2 xl:py-3"
+    <>
+      <header
+        className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 bg-[#0B1120]/80 backdrop-blur-md ${
+          scrolled ? "pt-3 pb-2" : "pt-5 pb-3"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 xl:px-10">
+          <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className={`transition-all duration-500 rounded-2xl border ${
+              scrolled
+                ? "bg-slate-950 border-slate-700/60 shadow-[0_10px_30px_rgba(0,0,0,0.5)] py-2.5"
+                : "bg-slate-900 border-slate-700/40 shadow-[0_8px_25px_rgba(0,0,0,0.3)] py-3.5"
+            }`}
+          >
+            <div className="px-6 sm:px-8 flex items-center justify-between">
+              
+              {/* Logo */}
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="cursor-pointer"
+                onClick={() => handleScroll("home")}
               >
-                Download Resume
-              </Button>
+                <h1 className="text-2xl font-black tracking-wider">
+                  <span className="text-white">Santosh</span>
+                  <span className="text-blue-500 drop-shadow-[0_0_10px_rgba(59,130,246,0.8)]">.</span>
+                </h1>
+              </motion.div>
+
+              {/* Desktop Navigation */}
+              <nav className="hidden lg:flex items-center gap-3 xl:gap-9">
+                {navLinks.map((item) => {
+                  const isActive = active === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleScroll(item.id)}
+                      className={`relative pb-1 text-sm xl:text-base font-medium transition duration-300 whitespace-nowrap ${
+                        isActive
+                          ? "text-blue-500 font-semibold"
+                          : "text-gray-300 hover:text-blue-400"
+                      }`}
+                    >
+                      {item.name}
+
+                      {isActive && (
+                        <span className="absolute left-0 -bottom-1 h-[2px] w-full rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
+
+              {/* Resume Button */}
+              <div className="hidden lg:block">
+                <Button
+                  onClick={handleDownloadResume}
+                  className="transition-transform duration-300 hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(59,130,246,0.3)] whitespace-nowrap text-sm lg:text-sm xl:text-base px-3 lg:px-3 xl:px-6 py-2 lg:py-2 xl:py-3"
+                >
+                  Download Resume
+                </Button>
+              </div>
+
+              {/* Mobile Menu Icon */}
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setOpen(true)}
+                className="lg:hidden text-3xl text-white p-1 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+              >
+                <HiMenuAlt3 />
+              </motion.button>
+
             </div>
+          </motion.div>
+        </div>
+      </header>
 
-            {/* Mobile Menu Icon */}
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setOpen(true)}
-              className="lg:hidden text-3xl text-white p-1 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-            >
-              <HiMenuAlt3 />
-            </motion.button>
-
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Mobile Menu Overlay & Drawer */}
+      {/* ========================================
+          MOBILE MENU OVERLAY & DRAWER
+          Rendered OUTSIDE <header> intentionally:
+          header has backdrop-blur (backdrop-filter),
+          which creates a new containing block for
+          position:fixed descendants. If the drawer
+          stayed inside header, its "fixed inset-0"
+          would be scoped to header's small box height
+          instead of the full viewport, collapsing it.
+      ======================================== */}
       <AnimatePresence>
         {open && (
           <div className="fixed inset-0 z-50 lg:hidden">
@@ -224,6 +239,6 @@ export default function Navbar() {
           </div>
         )}
       </AnimatePresence>
-    </header>
+    </>
   );
 }
