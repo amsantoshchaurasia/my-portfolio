@@ -34,7 +34,7 @@ export default function ContactForm() {
 
   const sendEmail = async (e) => {
     e.preventDefault();
-    
+
     // Mark sabhi fields ko touched taaki submit ke waqt validations show ho jayein agar empty hain
     setTouched({
       from_name: true,
@@ -92,7 +92,8 @@ export default function ContactForm() {
     const isTouched = touched[fieldName];
     const hasValue = form[fieldName].trim().length > 0;
 
-    let baseClass = "w-full rounded-xl bg-[#0B1120] border px-4 py-3.5 text-sm text-white outline-none transition duration-200 ";
+    let baseClass =
+      "w-full rounded-xl bg-[#0B1120] border px-3.5 sm:px-4 py-3 sm:py-3.5 lg:py-2.5 2xl:py-3.5 text-sm sm:text-base text-white outline-none transition duration-200 ";
 
     if (isTouched && !hasValue) {
       return baseClass + "border-red-500/80 focus:border-red-500 focus:ring-2 focus:ring-red-500/30";
@@ -107,22 +108,35 @@ export default function ContactForm() {
     <form
       onSubmit={sendEmail}
       className="
-        rounded-3xl
+        relative
+        overflow-hidden
+        rounded-2xl
+        sm:rounded-3xl
         border
         border-slate-700
         bg-[#111827]
-        p-8
+        pl-4
+        pr-4
+        py-4
+        sm:pl-8
+        sm:pr-6
+        sm:py-6
+        md:pl-10
+        md:pr-8
+        md:py-8
+        lg:py-6
+        2xl:py-10
         shadow-xl
       "
     >
-      <h3 className="text-2xl font-bold text-center mb-6 text-white">
+      <h3 className="text-base sm:text-xl md:text-2xl lg:text-xl 2xl:text-2xl font-bold text-center mb-3 sm:mb-5 lg:mb-4 text-white">
         Send a Message
       </h3>
 
       {/* Inline Status Feedback Banner */}
       {statusMessage.text && (
         <div
-          className={`mb-6 p-4 rounded-xl text-sm font-medium transition-all duration-300 ${
+          className={`mb-3 sm:mb-5 p-3 sm:p-4 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 ${
             statusMessage.type === "success"
               ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
               : "bg-red-500/10 border border-red-500/20 text-red-400"
@@ -132,9 +146,9 @@ export default function ContactForm() {
         </div>
       )}
 
-      <div className="space-y-5">
+      <div className="space-y-3 sm:space-y-4 lg:space-y-2.5 2xl:space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 sm:mb-2 lg:mb-1.5">
             Your Name
           </label>
           <input
@@ -153,7 +167,7 @@ export default function ContactForm() {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 sm:mb-2 lg:mb-1.5">
             Your Email
           </label>
           <input
@@ -172,11 +186,11 @@ export default function ContactForm() {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 sm:mb-2 lg:mb-1.5">
             Message
           </label>
           <textarea
-            rows="4"
+            rows="3"
             name="message"
             placeholder="Write your message here..."
             value={form.message}
@@ -190,11 +204,11 @@ export default function ContactForm() {
           )}
         </div>
 
-        <div className="pt-2">
+        <div className="pt-1 sm:pt-2 lg:pt-0.5 2xl:pt-2">
           <Button
             type="submit"
             disabled={loading}
-            className="w-full justify-center py-3.5 text-sm font-semibold"
+            className="w-full justify-center py-3 sm:py-3.5 lg:py-2.5 2xl:py-3.5 text-sm sm:text-base font-semibold"
           >
             {loading ? "Sending Message..." : "Send Message"}
           </Button>

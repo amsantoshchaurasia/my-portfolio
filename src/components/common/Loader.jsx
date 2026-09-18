@@ -31,6 +31,7 @@ export default function Loader({ children }) {
           items-center
           justify-center
           overflow-hidden
+          px-6
           transition-opacity
           duration-500
           ${fadeOut ? "opacity-0 pointer-events-none" : "opacity-100"}
@@ -40,12 +41,12 @@ export default function Loader({ children }) {
         <div className="absolute w-80 h-80 rounded-full bg-blue-600/25 blur-[120px]" />
 
         {/* Logo */}
-        <h1 className="text-5xl md:text-6xl font-black tracking-wide">
+        <h1 className="text-center leading-tight text-4xl sm:text-5xl md:text-6xl font-black tracking-wide">
           <span className="text-white">Santosh</span>{" "}
           <span className="text-blue-500">Chaurasia</span>
         </h1>
 
-        <p className="mt-4 text-gray-400 tracking-[6px] uppercase text-sm font-medium">
+        <p className="mt-4 text-center text-gray-400 tracking-[6px] uppercase text-xs sm:text-sm font-medium">
           Data Analyst
         </p>
 

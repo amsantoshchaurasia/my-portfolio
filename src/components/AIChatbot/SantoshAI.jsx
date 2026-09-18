@@ -214,7 +214,7 @@ export default function SantoshAI() {
 
   if (!isOpen) {
     return (
-      <div className="fixed bottom-28 right-4 sm:right-6 z-[9998] flex items-center gap-3 pointer-events-auto group">
+      <div className="fixed bottom-28 right-4 sm:right-6 z-[9998] flex items-center gap-3 pointer-events-auto group scale-[0.78] sm:scale-100 origin-bottom-right">
         <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 hidden sm:flex items-center rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 shadow-lg backdrop-blur-md pointer-events-none">
           <p className="font-semibold text-blue-600 flex items-center gap-1">
             <span>Hi! Ask me anything</span>

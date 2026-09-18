@@ -1,10 +1,6 @@
 import { useEffect, useState } from "react";
 
-import {
-  FaArrowUp,
-  FaInstagram,
-  FaFacebook,
-} from "react-icons/fa";
+import { FaArrowUp } from "react-icons/fa";
 
 import { FiMapPin } from "react-icons/fi";
 
@@ -53,21 +49,21 @@ export default function Footer() {
 
         <Container>
 
-          <div className="py-16">
+          <div className="py-8 sm:py-10 md:py-12 lg:py-16 2xl:py-20">
 
             {/* ==================================================
                 TOP SECTION
             ================================================== */}
 
-            <div className="grid gap-12 lg:grid-cols-3">
+            <div className="grid gap-8 sm:gap-10 md:grid-cols-2 md:gap-10 lg:grid-cols-3 lg:gap-12 2xl:gap-16">
 
               {/* ==================================================
                   LEFT - BRANDING
               ================================================== */}
 
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4 md:col-span-2 lg:col-span-1">
 
-                <h2 className="text-3xl font-black">
+                <h2 className="text-xl sm:text-2xl md:text-3xl 2xl:text-4xl font-black">
 
                   <span className="text-white">
                     Santosh
@@ -79,7 +75,7 @@ export default function Footer() {
 
                 </h2>
 
-                <p className="max-w-xl text-sm leading-8 text-gray-400">
+                <p className="max-w-xl text-xs sm:text-sm leading-6 sm:leading-7 md:leading-8 text-gray-400">
                   Data Analyst passionate about transforming raw
                   data into meaningful business insights using
                   Python, SQL, Excel and Power BI.
@@ -87,13 +83,15 @@ export default function Footer() {
 
                 {/* LOCATION */}
 
-                <div className="flex items-center gap-2.5 pt-2">
+                <div className="flex items-center gap-2 sm:gap-2.5 pt-1.5 sm:pt-2">
 
                   <div
                     className="
                       flex
-                      h-8
-                      w-8
+                      h-7
+                      w-7
+                      sm:h-8
+                      sm:w-8
                       shrink-0
                       items-center
                       justify-center
@@ -107,7 +105,7 @@ export default function Footer() {
                     <FiMapPin size={16} />
                   </div>
 
-                  <span className="text-sm font-medium text-gray-300">
+                  <span className="text-xs sm:text-sm font-medium text-gray-300">
                     Navi Mumbai, India
                   </span>
 
@@ -122,11 +120,11 @@ export default function Footer() {
 
               <div>
 
-                <h3 className="text-xl font-semibold">
+                <h3 className="text-base sm:text-lg md:text-xl font-semibold">
                   Quick Links
                 </h3>
 
-                <ul className="mt-6 space-y-4 text-sm text-gray-400">
+                <ul className="mt-4 sm:mt-5 md:mt-6 space-y-2.5 sm:space-y-3 md:space-y-4 text-xs sm:text-sm text-gray-400">
 
                   <li>
                     <a
@@ -175,15 +173,6 @@ export default function Footer() {
 
                   <li>
                     <a
-                      href="#certificates"
-                      className="transition-colors hover:text-blue-400"
-                    >
-                      Certificates
-                    </a>
-                  </li>
-
-                  <li>
-                    <a
                       href="#contact"
                       className="transition-colors hover:text-blue-400"
                     >
@@ -202,7 +191,7 @@ export default function Footer() {
 
               <div>
 
-                <h3 className="text-xl font-semibold">
+                <h3 className="text-base sm:text-lg md:text-xl font-semibold">
                   Connect
                 </h3>
 
@@ -213,90 +202,29 @@ export default function Footer() {
 
                 <div
                   className="
-                    mt-6
+                    mt-4
+                    sm:mt-5
+                    md:mt-6
                     flex
                     flex-nowrap
                     items-center
-                    gap-4
+                    gap-2.5
+                    sm:gap-3
+                    md:gap-4
+                    lg:gap-3
                   "
                 >
 
-                  {/* GITHUB + LINKEDIN + EMAIL */}
+                  {/* GITHUB + LINKEDIN + EMAIL + INSTAGRAM + FACEBOOK */}
 
                   <SocialIcons />
-
-
-                  {/* INSTAGRAM */}
-
-                  <a
-                    href="https://www.instagram.com/beingsxntxsh/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Instagram"
-                    className="
-                      flex
-                      h-14
-                      w-14
-                      shrink-0
-                      items-center
-                      justify-center
-                      rounded-full
-                      border
-                      border-slate-700
-                      bg-slate-900/40
-                      text-gray-200
-                      backdrop-blur-md
-                      transition-all
-                      duration-300
-                      hover:-translate-y-1
-                      hover:border-pink-500
-                      hover:bg-pink-500
-                      hover:text-white
-                      hover:scale-110
-                    "
-                  >
-                    <FaInstagram size={22} />
-                  </a>
-
-
-                  {/* FACEBOOK */}
-
-                  <a
-                    href="https://www.facebook.com/share/1DFA8xLujj/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Facebook"
-                    className="
-                      flex
-                      h-14
-                      w-14
-                      shrink-0
-                      items-center
-                      justify-center
-                      rounded-full
-                      border
-                      border-slate-700
-                      bg-slate-900/40
-                      text-gray-200
-                      backdrop-blur-md
-                      transition-all
-                      duration-300
-                      hover:-translate-y-1
-                      hover:border-blue-500
-                      hover:bg-blue-600
-                      hover:text-white
-                      hover:scale-110
-                    "
-                  >
-                    <FaFacebook size={22} />
-                  </a>
 
                 </div>
 
 
                 {/* DESCRIPTION */}
 
-                <p className="mt-6 max-w-lg text-sm leading-relaxed text-gray-400">
+                <p className="mt-4 sm:mt-5 md:mt-6 max-w-lg text-xs sm:text-sm leading-relaxed text-gray-400 pr-16 sm:pr-0">
                   Open for internships, freelance projects
                   and full-time opportunities.
                 </p>
@@ -310,7 +238,7 @@ export default function Footer() {
                 DIVIDER
             ================================================== */}
 
-            <div className="my-10 border-t border-slate-800"></div>
+            <div className="my-6 sm:my-8 md:my-10 border-t border-slate-800"></div>
 
 
             {/* ==================================================
@@ -319,7 +247,7 @@ export default function Footer() {
 
             <div className="text-center">
 
-              <p className="text-sm text-gray-500">
+              <p className="text-xs sm:text-sm text-gray-500">
                 © {year} Santosh Chaurasia. All Rights Reserved.
               </p>
 
@@ -341,12 +269,20 @@ export default function Footer() {
         aria-label="Back to top"
         className={`
           fixed
-          bottom-8
-          right-8
+          bottom-4
+          right-4
+          sm:bottom-6
+          sm:right-6
+          md:bottom-8
+          md:right-8
           z-50
           flex
-          h-14
-          w-14
+          h-10
+          w-10
+          sm:h-12
+          sm:w-12
+          md:h-14
+          md:w-14
           items-center
           justify-center
           rounded-full
@@ -366,7 +302,9 @@ export default function Footer() {
           }
         `}
       >
-        <FaArrowUp size={18} />
+        <FaArrowUp size={16} className="sm:hidden" />
+        <FaArrowUp size={17} className="hidden sm:block md:hidden" />
+        <FaArrowUp size={18} className="hidden md:block" />
       </button>
 
     </>
