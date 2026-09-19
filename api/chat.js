@@ -4,22 +4,29 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message } = req.body;
+    const { message, model } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
       return res.status(500).json({ error: 'Gemini API Key not configured on server' });
     }
 
-    // Using gemini-2.5-flash which is widely supported
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    // Use the model sent from the frontend; fall back to a current,
+    // supported model if none is provided.
+    const selectedModel = model || 'gemini-3.6-flash';
+
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: message }] }]
-        })
+          contents: [{ parts: [{ text: message }] }],
+        }),
       }
     );
 
@@ -28,7 +35,7 @@ export default async function handler(req, res) {
     if (!geminiResponse.ok) {
       return res.status(geminiResponse.status).json({
         success: false,
-        error: data.error?.message || 'Gemini API error'
+        error: data.error?.message || 'Gemini API error',
       });
     }
 
@@ -36,9 +43,8 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      response: textResponse
+      response: textResponse,
     });
-
   } catch (error) {
     return res.status(500).json({ success: false, error: error.message });
   }

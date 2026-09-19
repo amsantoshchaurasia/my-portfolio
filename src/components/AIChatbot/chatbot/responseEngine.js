@@ -31,11 +31,15 @@ import staticAnswers from "./staticAnswers";
 
   If Gemini returns an error such as 503, 429, 500,
   the code automatically tries the next available model.
+
+  Only current, supported Gemini model IDs are listed here.
+  (gemini-1.5-flash / gemini-1.5-pro / gemini-2.5-flash are
+  deprecated and will fail with a 404/model-not-found error.)
 */
 
 const GEMINI_MODELS = [
-  "gemini-1.5-flash",
-  "gemini-1.5-pro",
+  "gemini-3.6-flash",
+  "gemini-3.5-flash-lite",
 ];
 
 /*
