@@ -4,17 +4,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message, model } = req.body;
+    const { message } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
       return res.status(500).json({ error: 'Gemini API Key not configured on server' });
     }
 
-    const selectedModel = model || 'gemini-1.5-flash';
-
+    // Using gemini-2.5-flash which is widely supported
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -33,7 +32,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // Extract text cleanly from Gemini response structure
     const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
     return res.status(200).json({
