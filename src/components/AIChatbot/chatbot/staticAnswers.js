@@ -184,6 +184,94 @@ Santosh's resume is available through the Resume section of his portfolio.
   "what is included in santosh's resume?": `
 Santosh's resume includes information about his education, skills, professional experience, projects, certifications, and other relevant professional details.
 `,
+
+  /* =======================================================
+     GREETINGS
+  ======================================================= */
+
+  "hello": `
+Hello! I'm Santosh AI, the assistant for Santosh Chaurasia's portfolio. Feel free to ask me about his skills, projects, education, or experience.
+`,
+
+  "hi": `
+Hi there! I'm Santosh AI. Ask me anything about Santosh's skills, projects, or professional background.
+`,
+
+  "hey": `
+Hey! I'm Santosh AI. I can help you learn about Santosh's skills, projects, education, and experience.
+`,
+
+  "good morning": `
+Good morning! I'm Santosh AI. How can I help you learn about Santosh today?
+`,
+
+  "good afternoon": `
+Good afternoon! Feel free to ask me anything about Santosh's skills, projects, or experience.
+`,
+
+  "good evening": `
+Good evening! I'm here to help you learn more about Santosh's work. What would you like to know?
+`,
+
+  "how are you?": `
+I'm doing well, thank you for asking! I'm here to help you learn about Santosh's skills, projects, and professional background. What would you like to know?
+`,
+
+  /* =======================================================
+     THANKS / CLOSING
+  ======================================================= */
+
+  "thanks": `
+You're welcome! Let me know if you have any other questions about Santosh.
+`,
+
+  "thank you": `
+You're welcome! Feel free to ask anything else about Santosh's skills, projects, or experience.
+`,
+
+  "ok": `
+Got it! Let me know if there's anything else you'd like to know about Santosh.
+`,
+
+  "okay": `
+Sounds good! Feel free to ask if you have more questions about Santosh.
+`,
+
+  "bye": `
+Thanks for stopping by! Feel free to come back anytime you have questions about Santosh.
+`,
+
+  "goodbye": `
+Goodbye! Have a great day, and feel free to return if you'd like to know more about Santosh.
+`,
+
+  /* =======================================================
+     ABOUT THE ASSISTANT
+  ======================================================= */
+
+  "who are you?": `
+I'm Santosh AI, a chatbot built to answer questions about Santosh Chaurasia's skills, projects, education, and professional experience.
+`,
+
+  "what is your name?": `
+I'm Santosh AI, the assistant for Santosh Chaurasia's portfolio.
+`,
+
+  "what can you do?": `
+I can answer questions about Santosh's skills, projects, education, work experience, and certifications. Just ask me anything about his professional background!
+`,
+
+  "are you a bot?": `
+Yes, I'm an AI assistant built to help you learn about Santosh's skills, projects, and professional background.
+`,
+
+  "are you real?": `
+I'm an AI assistant, not a real person — but everything I share about Santosh comes from real, verified information in his portfolio.
+`,
+
+  "are you human?": `
+No, I'm an AI assistant. I'm here to answer questions about Santosh's professional background using information from his portfolio.
+`,
 };
 
 export default staticAnswers;

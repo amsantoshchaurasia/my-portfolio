@@ -4,7 +4,9 @@ export function normalizeQuestion(question) {
     .toLowerCase()
     .replace(/[’‘]/g, "'")
     .replace(/[“”]/g, '"')
-    .replace(/\s+/g, " ");
+    .replace(/[?!.,;:]+/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export function isValidQuestion(question) {

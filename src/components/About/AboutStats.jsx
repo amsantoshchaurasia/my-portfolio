@@ -1,13 +1,61 @@
 import { useEffect, useState } from "react";
 import { getAboutStats } from "../../firebase/firestore";
 
+/* =========================================================
+   DYNAMIC EXPERIENCE CALCULATION
+========================================================= */
+
+// Santosh's professional journey start date.
+// Month is 0-indexed in JS Date, so 2 = March.
+const JOINING_DATE = new Date(2026, 2, 26);
+
+function getExperienceLabel(startDate) {
+  const now = new Date();
+
+  let months =
+    (now.getFullYear() - startDate.getFullYear()) * 12 +
+    (now.getMonth() - startDate.getMonth());
+
+  // If we haven't yet reached the same day-of-month as the
+  // start date, the current month isn't fully complete.
+  if (now.getDate() < startDate.getDate()) {
+    months -= 1;
+  }
+
+  if (months < 0) {
+    months = 0;
+  }
+
+  /*
+    Under 12 months: show exact month count.
+    e.g. "1 Month", "6 Months", "11 Months"
+  */
+  if (months < 12) {
+    return `${months} ${months === 1 ? "Month" : "Months"}`;
+  }
+
+  /*
+    12+ months: shift to years in half-year steps.
+    12-17 -> 1 Year
+    18-23 -> 1.5 Years
+    24-29 -> 2 Years
+    ...and so on.
+  */
+  const years = Math.floor(months / 6) / 2;
+
+  return `${years} ${years === 1 ? "Year" : "Years"}`;
+}
+
 export default function AboutStats() {
   const [stats, setStats] = useState({
     projects: "10+",
     certificates: "15+",
     cgpa: "8.70",
-    experience: "1+",
   });
+
+  const [experience, setExperience] = useState(
+    getExperienceLabel(JOINING_DATE)
+  );
 
   const [loading, setLoading] = useState(true);
 
@@ -20,7 +68,6 @@ export default function AboutStats() {
             projects: data.projects || "10+",
             certificates: data.certificates || "15+",
             cgpa: data.cgpa || "8.70",
-            experience: data.experience || "1+",
           });
         }
       } catch (error) {
@@ -33,11 +80,21 @@ export default function AboutStats() {
     loadStats();
   }, []);
 
+  // Keep the experience counter fresh even if the tab stays
+  // open across a day/month boundary (checks once per hour).
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setExperience(getExperienceLabel(JOINING_DATE));
+    }, 60 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const statsList = [
     { number: stats.projects, title: "Projects" },
     { number: stats.certificates, title: "Certificates" },
     { number: stats.cgpa, title: "CGPA" },
-    { number: stats.experience, title: "Experience" },
+    { number: experience, title: "Experience" },
   ];
 
   if (loading) {
