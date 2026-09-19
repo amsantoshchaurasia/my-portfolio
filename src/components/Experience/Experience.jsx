@@ -76,7 +76,7 @@ export default function Experience() {
               TIMELINE
           ======================================== */}
 
-          <div className="relative mx-auto mt-6 sm:mt-10 md:mt-8 lg:mt-10 max-w-4xl">
+          <div className="relative mx-auto mt-6 sm:mt-6 md:mt-8 lg:mt-8 max-w-4xl">
 
             {/* LOADING */}
 

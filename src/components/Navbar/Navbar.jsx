@@ -120,8 +120,10 @@ export default function Navbar() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 bg-[#0B1120]/80 backdrop-blur-md ${
-          scrolled ? "pt-3 pb-2" : "pt-5 pb-3"
+        className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
+          scrolled
+            ? "bg-[#0B1120]/80 backdrop-blur-md pt-3 pb-2"
+            : "bg-transparent pt-5 pb-3"
         }`}
       >
         <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-6 xl:px-10">
@@ -131,8 +133,8 @@ export default function Navbar() {
             transition={{ duration: 0.5 }}
             className={`transition-all duration-500 rounded-2xl border ${
               scrolled
-                ? "bg-slate-950 border-slate-700/60 shadow-[0_10px_30px_rgba(0,0,0,0.5)] py-2.5"
-                : "bg-slate-900 border-slate-700/40 shadow-[0_8px_25px_rgba(0,0,0,0.3)] py-3.5"
+                ? "bg-slate-950 border-slate-600/70 shadow-[0_10px_30px_rgba(0,0,0,0.5)] py-2.5"
+                : "bg-slate-900 border-slate-600/50 shadow-[0_8px_25px_rgba(0,0,0,0.3)] py-3.5"
             }`}
           >
             <div className="px-6 sm:px-8 flex items-center justify-between">

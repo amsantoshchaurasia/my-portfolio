@@ -103,7 +103,7 @@ export default function ExperienceCard({
 
         {visiblePoints.length > 0 && (
 
-          <ul className="mt-4 sm:mt-6 space-y-2.5 sm:space-y-3.5 text-gray-400 border-t border-slate-700/60 pt-3.5 sm:pt-5">
+          <ul className="mt-4 sm:mt-4 space-y-2.5 sm:space-y-3.5 text-gray-400 border-t border-slate-700/60 pt-3.5 sm:pt-5">
 
             {visiblePoints.map(
               (point, index) => (

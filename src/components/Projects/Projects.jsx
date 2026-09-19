@@ -121,8 +121,8 @@ export default function Projects() {
             <div
               className="
                 mt-6
-                sm:mt-12
-                md:mt-16
+                sm:mt-6
+                md:mt-8
                 grid
                 grid-cols-1
                 gap-5

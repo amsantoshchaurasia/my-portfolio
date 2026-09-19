@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getAboutData } from "../../firebase/firestore";
-import profile from "../../assets/images/profile.png";
+import profile from "../../assets/images/about.jpeg";
 
 export default function AboutContent() {
   const [about, setAbout] = useState(null);

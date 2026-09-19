@@ -149,7 +149,7 @@ export default function Skills() {
   return (
     <section
       id="skills"
-      className="scroll-mt-16 sm:scroll-mt-12 lg:scroll-mt-13 xl:scroll-mt-17 pt-6 sm:pt-14 md:pt-16 lg:pt-8 xl:pt-10 pb-16 sm:pb-20 lg:pb-24"
+      className="scroll-mt-16 sm:scroll-mt-8 lg:scroll-mt-13 xl:scroll-mt-17 pt-6 sm:pt-14 md:pt-16 lg:pt-8 xl:pt-10 pb-16 sm:pb-20 lg:pb-24"
     >
       <Container>
         <SectionAnimation>
@@ -182,7 +182,7 @@ export default function Skills() {
           ======================================== */}
 
           {analytics.length > 0 && (
-            <div className="mt-6 sm:mt-14 lg:mt-16">
+            <div className="mt-6 sm:mt-6 lg:mt-8">
 
               <h3 className="mb-6 sm:mb-8 text-xl sm:text-2xl font-bold text-white">
                 Data Analytics

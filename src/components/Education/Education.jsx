@@ -157,27 +157,27 @@ export default function Education() {
   return (
     <section
       id="education"
-      className="bg-[#0B1120] text-white scroll-mt-16 sm:scroll-mt-13 md:scroll-mt-21 lg:scroll-mt-14 xl:scroll-mt-15 pt-6 sm:pt-12 md:pt-6 lg:pt-8 xl:pt-10 pb-10 sm:pb-20 lg:pb-24"
+      className="bg-[#0B1120] text-white scroll-mt-16 sm:scroll-mt-13 md:scroll-mt-18 lg:scroll-mt-14 xl:scroll-mt-15 pt-6 sm:pt-12 md:pt-6 lg:pt-8 xl:pt-10 pb-10 sm:pb-20 lg:pb-24"
     >
       <Container>
 
         <SectionAnimation>
 
           {/* ==================================================
-              HEADING
+              HEADING (matches Experience heading style)
           ================================================== */}
 
           <div className="text-center max-w-xl sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto">
 
-            <p className="uppercase tracking-[3px] sm:tracking-[8px] text-blue-400 font-semibold text-[11px] sm:text-sm">
+            <p className="text-xs sm:text-sm font-semibold uppercase tracking-[4px] sm:tracking-[8px] text-blue-400">
               Academics
             </p>
 
-            <h2 className="mt-2 sm:mt-4 text-2xl sm:text-4xl md:text-5xl font-black">
+            <h2 className="mt-3 sm:mt-4 text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black">
               Education
             </h2>
 
-            <p className="mt-3 sm:mt-6 text-xs sm:text-base md:text-lg text-gray-400 leading-5 sm:leading-7 md:leading-8 px-2">
+            <p className="mt-3 sm:mt-6 text-xs sm:text-base md:text-lg leading-5 sm:leading-7 md:leading-8 text-gray-400 px-2">
               My academic journey and educational background.
             </p>
 
@@ -209,13 +209,16 @@ export default function Education() {
               ================================================== */}
 
               {higherEducation.length > 0 && (
-                <div className="max-w-3xl lg:max-w-[52rem] xl:max-w-4xl 2xl:max-w-5xl mx-auto mt-6 sm:mt-10 md:mt-8 lg:mt-10">
+                <div className="max-w-3xl lg:max-w-[52rem] xl:max-w-4xl 2xl:max-w-5xl mx-auto mt-6 sm:mt-6 md:mt-8 lg:mt-8">
 
                   {higherEducation.map(
-                    (item) => (
+                    (item, index) => (
                       <EducationCard
                         key={item.id}
                         item={item}
+                        isLast={
+                          index === higherEducation.length - 1
+                        }
                       />
                     )
                   )}
@@ -225,23 +228,23 @@ export default function Education() {
 
               {/* ==================================================
                   SCHOOL EDUCATION
-                  (EducationCard already draws its own timeline
-                  line + dot, so no extra wrapper/line needed here
-                  — avoids double-indent and overlapping lines.)
               ================================================== */}
 
               {schoolEducation.length > 0 && (
-                <div className="max-w-3xl lg:max-w-[52rem] xl:max-w-4xl 2xl:max-w-5xl mx-auto mt-6 sm:mt-10">
+                <div className="max-w-3xl lg:max-w-[52rem] xl:max-w-4xl 2xl:max-w-5xl mx-auto mt-6 sm:mt-10 md:mt-8 lg:mt-10">
 
-                  <h3 className="text-lg sm:text-2xl md:text-3xl font-bold text-center mb-5 sm:mb-10 md:mb-12">
+                  <h3 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center mb-5 sm:mb-10 md:mb-12">
                     School Education
                   </h3>
 
                   {schoolEducation.map(
-                    (item) => (
+                    (item, index) => (
                       <EducationCard
                         key={item.id}
                         item={item}
+                        isLast={
+                          index === schoolEducation.length - 1
+                        }
                       />
                     )
                   )}
