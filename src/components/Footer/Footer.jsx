@@ -49,7 +49,7 @@ export default function Footer() {
 
         <Container>
 
-          <div className="py-8 sm:py-10 md:py-12 lg:py-16 2xl:py-20">
+          <div className="py-8 sm:py-10 md:py-12 lg:py-16 2xl:py-15">
 
             {/* ==================================================
                 TOP SECTION

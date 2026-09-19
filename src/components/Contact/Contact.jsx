@@ -6,7 +6,7 @@ export default function Contact() {
   return (
     <section
       id="contact"
-      className="bg-[#0B1120] text-white scroll-mt-16 sm:scroll-mt-13 md:scroll-mt-18 lg:scroll-mt-16 xl:scroll-mt-19 pt-6 sm:pt-12 md:pt-6 lg:pt-6 xl:pt-6 2xl:pt-10 pb-10 sm:pb-20 lg:pb-8 xl:pb-4 2xl:pb-12"
+      className="bg-[#0B1120] text-white scroll-mt-16 sm:scroll-mt-13 md:scroll-mt-18 lg:scroll-mt-16 xl:scroll-mt-15 pt-6 sm:pt-12 md:pt-6 lg:pt-6 xl:pt-6 2xl:pt-10 pb-10 sm:pb-20 lg:pb-8 xl:pb-4 2xl:pb-12"
     >
       <Container>
         <SectionAnimation>
