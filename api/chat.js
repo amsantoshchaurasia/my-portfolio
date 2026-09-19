@@ -27,11 +27,21 @@ export default async function handler(req, res) {
     const data = await geminiResponse.json();
 
     if (!geminiResponse.ok) {
-      return res.status(geminiResponse.status).json(data);
+      return res.status(geminiResponse.status).json({
+        success: false,
+        error: data.error?.message || 'Gemini API error'
+      });
     }
 
-    return res.status(200).json(data);
+    // Extract text cleanly from Gemini response structure
+    const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    return res.status(200).json({
+      success: true,
+      response: textResponse
+    });
+
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ success: false, error: error.message });
   }
 }
