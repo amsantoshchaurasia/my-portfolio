@@ -13,16 +13,52 @@ const initialForm = {
   title: "",
   company: "",
   year: "",
-  type: "major",
+  type: "other",
   order: 1,
+  tags: "",
 };
+
+// ======================================================
+// TAGS
+// ======================================================
+// Quick-pick suggestions keep spelling consistent so the
+// portfolio filter tabs don't get duplicates like "sql" / "SQL".
+const TAG_SUGGESTIONS = [
+  "Data Analytics",
+  "Python",
+  "SQL",
+  "Power BI",
+  "Excel",
+  "Web Development",
+];
+
+// "Power BI, SQL" -> ["Power BI", "SQL"]  (trimmed, no duplicates)
+function parseTags(value) {
+  const seen = new Set();
+
+  return String(value || "")
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter((tag) => {
+      const key = tag.toLowerCase();
+      if (!tag || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+// Firestore value (array or string) -> "Power BI, SQL"
+function tagsToString(value) {
+  if (Array.isArray(value)) return value.join(", ");
+  return value || "";
+}
 
 // ======================================================
 // LIMITS
 // ======================================================
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
+// const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB  (thumbnail image - disabled for now)
 
 // ======================================================
 // CLOUDINARY CONFIG
@@ -56,33 +92,35 @@ async function uploadToCloudinary(file) {
   };
 }
 
-// ======================================================
-// CLOUDINARY IMAGE UPLOAD (for certificate thumbnail)
-// ======================================================
-
-async function uploadImageToCloudinary(file) {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", UPLOAD_PRESET);
-
-  const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-    {
-      method: "POST",
-      body: formData,
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error?.message || "Failed to upload image to Cloudinary.");
-  }
-
-  return {
-    imageUrl: data.secure_url,
-  };
-}
+// // ======================================================
+// // CLOUDINARY IMAGE UPLOAD (for certificate thumbnail)
+// // DISABLED: portfolio cards no longer show an image.
+// // Uncomment this (and the other "THUMBNAIL" comments) to bring it back.
+// // ======================================================
+//
+// async function uploadImageToCloudinary(file) {
+//   const formData = new FormData();
+//   formData.append("file", file);
+//   formData.append("upload_preset", UPLOAD_PRESET);
+//
+//   const response = await fetch(
+//     `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+//     {
+//       method: "POST",
+//       body: formData,
+//     }
+//   );
+//
+//   const data = await response.json();
+//
+//   if (!response.ok) {
+//     throw new Error(data.error?.message || "Failed to upload image to Cloudinary.");
+//   }
+//
+//   return {
+//     imageUrl: data.secure_url,
+//   };
+// }
 
 // ======================================================
 // COMPONENT
@@ -97,8 +135,9 @@ export default function CertificatesForm({
 
   const [file, setFile] = useState(null);
 
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  // THUMBNAIL (disabled)
+  // const [imageFile, setImageFile] = useState(null);
+  // const [imagePreview, setImagePreview] = useState(null);
 
   const [loading, setLoading] = useState(false);
 
@@ -118,16 +157,19 @@ export default function CertificatesForm({
         year: editingCertificate.year || "",
         type: editingCertificate.type || "major",
         order: editingCertificate.order || 1,
+        tags: tagsToString(editingCertificate.tags),
       });
 
       setFile(null);
-      setImageFile(null);
-      setImagePreview(null);
+      // THUMBNAIL (disabled)
+      // setImageFile(null);
+      // setImagePreview(null);
     } else {
       setForm(initialForm);
       setFile(null);
-      setImageFile(null);
-      setImagePreview(null);
+      // THUMBNAIL (disabled)
+      // setImageFile(null);
+      // setImagePreview(null);
     }
 
     setMessage("");
@@ -135,16 +177,16 @@ export default function CertificatesForm({
   }, [editingCertificate]);
 
   // ======================================================
-  // CLEANUP IMAGE PREVIEW OBJECT URL
+  // CLEANUP IMAGE PREVIEW OBJECT URL (THUMBNAIL - disabled)
   // ======================================================
-
-  useEffect(() => {
-    return () => {
-      if (imagePreview) {
-        URL.revokeObjectURL(imagePreview);
-      }
-    };
-  }, [imagePreview]);
+  //
+  // useEffect(() => {
+  //   return () => {
+  //     if (imagePreview) {
+  //       URL.revokeObjectURL(imagePreview);
+  //     }
+  //   };
+  // }, [imagePreview]);
 
   // ======================================================
   // INPUT CHANGE
@@ -157,6 +199,25 @@ export default function CertificatesForm({
       ...prev,
       [name]: value,
     }));
+  }
+
+  // ======================================================
+  // TAG QUICK-PICK (toggle a suggestion on / off)
+  // ======================================================
+
+  function toggleTag(tag) {
+    setForm((prev) => {
+      const current = parseTags(prev.tags);
+      const exists = current.some(
+        (item) => item.toLowerCase() === tag.toLowerCase()
+      );
+
+      const next = exists
+        ? current.filter((item) => item.toLowerCase() !== tag.toLowerCase())
+        : [...current, tag];
+
+      return { ...prev, tags: next.join(", ") };
+    });
   }
 
   // ======================================================
@@ -213,60 +274,48 @@ export default function CertificatesForm({
   }
 
   // ======================================================
-  // IMAGE VALIDATION (THUMBNAIL)
+  // IMAGE VALIDATION (THUMBNAIL - disabled)
   // ======================================================
-
-  function handleImageChange(event) {
-    const selectedImage = event.target.files?.[0];
-
-    setError("");
-    setMessage("");
-
-    if (!selectedImage) {
-      setImageFile(null);
-      setImagePreview(null);
-      return;
-    }
-
-    // ----------------------------------------------------
-    // IMAGE TYPE CHECK
-    // ----------------------------------------------------
-
-    if (!selectedImage.type.startsWith("image/")) {
-      setError("Please select a valid image file (JPG, PNG, WEBP).");
-
-      event.target.value = "";
-      setImageFile(null);
-      setImagePreview(null);
-
-      return;
-    }
-
-    // ----------------------------------------------------
-    // IMAGE SIZE CHECK
-    // ----------------------------------------------------
-
-    if (selectedImage.size > MAX_IMAGE_SIZE) {
-      setError("Certificate image must be smaller than 5 MB.");
-
-      event.target.value = "";
-      setImageFile(null);
-      setImagePreview(null);
-
-      return;
-    }
-
-    // ----------------------------------------------------
-    // VALID IMAGE
-    // ----------------------------------------------------
-
-    if (imagePreview) {
-      URL.revokeObjectURL(imagePreview);
-    }
-
-    setImageFile(selectedImage);
-    setImagePreview(URL.createObjectURL(selectedImage));
-  }
+  //
+  // function handleImageChange(event) {
+  //   const selectedImage = event.target.files?.[0];
+  //
+  //   setError("");
+  //   setMessage("");
+  //
+  //   if (!selectedImage) {
+  //     setImageFile(null);
+  //     setImagePreview(null);
+  //     return;
+  //   }
+  //
+  //   if (!selectedImage.type.startsWith("image/")) {
+  //     setError("Please select a valid image file (JPG, PNG, WEBP).");
+  //
+  //     event.target.value = "";
+  //     setImageFile(null);
+  //     setImagePreview(null);
+  //
+  //     return;
+  //   }
+  //
+  //   if (selectedImage.size > MAX_IMAGE_SIZE) {
+  //     setError("Certificate image must be smaller than 5 MB.");
+  //
+  //     event.target.value = "";
+  //     setImageFile(null);
+  //     setImagePreview(null);
+  //
+  //     return;
+  //   }
+  //
+  //   if (imagePreview) {
+  //     URL.revokeObjectURL(imagePreview);
+  //   }
+  //
+  //   setImageFile(selectedImage);
+  //   setImagePreview(URL.createObjectURL(selectedImage));
+  // }
 
   // ======================================================
   // FORM VALIDATION
@@ -338,6 +387,7 @@ export default function CertificatesForm({
         year: form.year.trim(),
         type: form.type,
         order: Number(form.order) || 1,
+        tags: parseTags(form.tags),
       };
 
       // ==================================================
@@ -350,14 +400,12 @@ export default function CertificatesForm({
         certificateData.fileName = uploadedFile.fileName;
       }
 
-      // ==================================================
-      // UPLOAD NEW IMAGE TO CLOUDINARY IF SELECTED
-      // ==================================================
-
-      if (imageFile) {
-        const uploadedImage = await uploadImageToCloudinary(imageFile);
-        certificateData.imageUrl = uploadedImage.imageUrl;
-      }
+      // UPLOAD NEW IMAGE TO CLOUDINARY IF SELECTED (THUMBNAIL - disabled)
+      //
+      // if (imageFile) {
+      //   const uploadedImage = await uploadImageToCloudinary(imageFile);
+      //   certificateData.imageUrl = uploadedImage.imageUrl;
+      // }
 
       // ==================================================
       // CREATE NEW CERTIFICATE
@@ -386,12 +434,12 @@ export default function CertificatesForm({
 
       setForm(initialForm);
       setFile(null);
-
-      if (imagePreview) {
-        URL.revokeObjectURL(imagePreview);
-      }
-      setImageFile(null);
-      setImagePreview(null);
+      // THUMBNAIL (disabled)
+      // if (imagePreview) {
+      //   URL.revokeObjectURL(imagePreview);
+      // }
+      // setImageFile(null);
+      // setImagePreview(null);
 
       // ==================================================
       // CLEAR FILE INPUTS
@@ -401,11 +449,11 @@ export default function CertificatesForm({
       if (fileInput) {
         fileInput.value = "";
       }
-
-      const imageInput = document.getElementById("certificate-image");
-      if (imageInput) {
-        imageInput.value = "";
-      }
+      // THUMBNAIL (disabled)
+      // const imageInput = document.getElementById("certificate-image");
+      // if (imageInput) {
+      //   imageInput.value = "";
+      // }
 
       // ==================================================
       // REFRESH ADMIN LIST & EXIT EDIT
@@ -438,12 +486,12 @@ export default function CertificatesForm({
 
     setForm(initialForm);
     setFile(null);
-
-    if (imagePreview) {
-      URL.revokeObjectURL(imagePreview);
-    }
-    setImageFile(null);
-    setImagePreview(null);
+    // THUMBNAIL (disabled)
+    // if (imagePreview) {
+    //   URL.revokeObjectURL(imagePreview);
+    // }
+    // setImageFile(null);
+    // setImagePreview(null);
 
     setMessage("");
     setError("");
@@ -452,11 +500,11 @@ export default function CertificatesForm({
     if (fileInput) {
       fileInput.value = "";
     }
-
-    const imageInput = document.getElementById("certificate-image");
-    if (imageInput) {
-      imageInput.value = "";
-    }
+    // THUMBNAIL (disabled)
+    // const imageInput = document.getElementById("certificate-image");
+    // if (imageInput) {
+    //   imageInput.value = "";
+    // }
 
     onCancelEdit?.();
   }
@@ -467,9 +515,78 @@ export default function CertificatesForm({
 
   const isEditing = Boolean(editingCertificate);
 
+  const selectedTags = parseTags(form.tags);
+
   // ======================================================
   // UI
   // ======================================================
+
+  // ======================================================
+  // THUMBNAIL IMAGE UI (disabled)
+  // To bring it back: uncomment the other "THUMBNAIL" blocks above,
+  // then paste the JSX below inside the <form>, just before the
+  // "PDF UPLOAD" block (remove the leading "// ").
+  // ======================================================
+  //
+  // {/* CERTIFICATE IMAGE (THUMBNAIL) */}
+  // <div>
+  //   <label
+  //     htmlFor="certificate-image"
+  //     className="mb-2 block text-sm font-medium text-gray-300"
+  //   >
+  //     Certificate Image (thumbnail)
+  //   </label>
+  //
+  //   <div className="rounded-2xl border border-dashed border-slate-600 bg-slate-950/60 p-5">
+  //     {/* CURRENT IMAGE */}
+  //     {isEditing && editingCertificate.imageUrl && !imagePreview && (
+  //       <div className="mb-4 overflow-hidden rounded-xl border border-blue-500/20 bg-blue-500/5">
+  //         <img
+  //           src={editingCertificate.imageUrl}
+  //           alt="Current certificate thumbnail"
+  //           className="h-32 w-full object-cover"
+  //         />
+  //         <p className="p-3 text-xs text-gray-500">
+  //           Select a new image only if you want to replace this thumbnail.
+  //         </p>
+  //       </div>
+  //     )}
+  //
+  //     {/* IMAGE INPUT */}
+  //     <input
+  //       id="certificate-image"
+  //       type="file"
+  //       accept="image/*"
+  //       onChange={handleImageChange}
+  //       disabled={loading}
+  //       className="block w-full text-sm text-gray-400 file:mr-4 file:rounded-lg file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+  //     />
+  //
+  //     <p className="mt-3 text-xs text-gray-500">
+  //       JPG, PNG or WEBP. Maximum file size: 5 MB. Optional.
+  //     </p>
+  //
+  //     {isEditing && (
+  //       <p className="mt-1 text-xs text-gray-500">
+  //         Leave empty to keep the existing image.
+  //       </p>
+  //     )}
+  //
+  //     {/* SELECTED IMAGE PREVIEW */}
+  //     {imagePreview && (
+  //       <div className="mt-4 overflow-hidden rounded-xl border border-green-500/20 bg-green-500/5">
+  //         <img
+  //           src={imagePreview}
+  //           alt="Selected certificate thumbnail preview"
+  //           className="h-32 w-full object-cover"
+  //         />
+  //         <p className="p-3 text-xs text-green-400">
+  //           {imageFile?.name} - {(imageFile.size / 1024 / 1024).toFixed(2)} MB
+  //         </p>
+  //       </div>
+  //     )}
+  //   </div>
+  // </div>
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -484,7 +601,7 @@ export default function CertificatesForm({
         </h3>
 
         <p className="mt-2 text-sm text-gray-500">
-          Upload your certificate PDF and thumbnail image via Cloudinary.
+          Upload your certificate PDF via Cloudinary.
         </p>
       </div>
 
@@ -534,6 +651,54 @@ export default function CertificatesForm({
           disabled={loading}
           className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
         />
+      </div>
+
+      {/* TAGS / SKILLS */}
+      <div>
+        <label className="mb-2 block text-sm font-medium text-gray-300">
+          Skills / Tags
+        </label>
+
+        <input
+          type="text"
+          name="tags"
+          value={form.tags}
+          onChange={handleChange}
+          placeholder="e.g. Power BI, SQL"
+          disabled={loading}
+          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+        />
+
+        {/* QUICK PICK */}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {TAG_SUGGESTIONS.map((tag) => {
+            const active = selectedTags.some(
+              (item) => item.toLowerCase() === tag.toLowerCase()
+            );
+
+            return (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => toggleTag(tag)}
+                disabled={loading}
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                  active
+                    ? "border-blue-500 bg-blue-500/15 text-blue-400"
+                    : "border-slate-700 bg-slate-900 text-gray-400 hover:border-slate-500 hover:text-white"
+                }`}
+              >
+                {active ? "✓ " : "+ "}
+                {tag}
+              </button>
+            );
+          })}
+        </div>
+
+        <p className="mt-2 text-xs text-gray-500">
+          Separate multiple tags with commas. These become the filter tabs on
+          your portfolio, so keep spelling consistent.
+        </p>
       </div>
 
       {/* YEAR / TYPE / ORDER */}
@@ -589,66 +754,6 @@ export default function CertificatesForm({
             disabled={loading}
             className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
           />
-        </div>
-      </div>
-
-      {/* CERTIFICATE IMAGE (THUMBNAIL) */}
-      <div>
-        <label
-          htmlFor="certificate-image"
-          className="mb-2 block text-sm font-medium text-gray-300"
-        >
-          Certificate Image (thumbnail)
-        </label>
-
-        <div className="rounded-2xl border border-dashed border-slate-600 bg-slate-950/60 p-5">
-          {/* CURRENT IMAGE */}
-          {isEditing && editingCertificate.imageUrl && !imagePreview && (
-            <div className="mb-4 overflow-hidden rounded-xl border border-blue-500/20 bg-blue-500/5">
-              <img
-                src={editingCertificate.imageUrl}
-                alt="Current certificate thumbnail"
-                className="h-32 w-full object-cover"
-              />
-              <p className="p-3 text-xs text-gray-500">
-                Select a new image only if you want to replace this thumbnail.
-              </p>
-            </div>
-          )}
-
-          {/* IMAGE INPUT */}
-          <input
-            id="certificate-image"
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            disabled={loading}
-            className="block w-full text-sm text-gray-400 file:mr-4 file:rounded-lg file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-          />
-
-          <p className="mt-3 text-xs text-gray-500">
-            JPG, PNG or WEBP. Maximum file size: 5 MB. Optional — a placeholder icon shows if left empty.
-          </p>
-
-          {isEditing && (
-            <p className="mt-1 text-xs text-gray-500">
-              Leave empty to keep the existing image.
-            </p>
-          )}
-
-          {/* SELECTED IMAGE PREVIEW */}
-          {imagePreview && (
-            <div className="mt-4 overflow-hidden rounded-xl border border-green-500/20 bg-green-500/5">
-              <img
-                src={imagePreview}
-                alt="Selected certificate thumbnail preview"
-                className="h-32 w-full object-cover"
-              />
-              <p className="p-3 text-xs text-green-400">
-                {imageFile?.name} — {(imageFile.size / 1024 / 1024).toFixed(2)} MB
-              </p>
-            </div>
-          )}
         </div>
       </div>
 

@@ -72,7 +72,7 @@ export default function Projects() {
   return (
     <section
       id="projects"
-      className="bg-[#0B1120] text-white scroll-mt-14 sm:scroll-mt-18 lg:scroll-mt-13 xl:scroll-mt-17 pt-8 sm:pt-6 md:pt-6 lg:pt-8 xl:pt-10 pb-16 sm:pb-20 lg:pb-24"
+      className="bg-[#0B1120] text-white scroll-mt-14 sm:scroll-mt-22 lg:scroll-mt-13 xl:scroll-mt-17 pt-8 sm:pt-6 md:pt-6 lg:pt-8 xl:pt-10 pb-16 sm:pb-20 lg:pb-24"
     >
       <Container>
         <SectionAnimation>

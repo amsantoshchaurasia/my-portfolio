@@ -7,7 +7,7 @@ export default function About() {
   return (
     <section
       id="about"
-      className="bg-[#0B1120] text-white pt-8 sm:pt-12 md:pt-14 lg:pt-6 xl:pt-8 2xl:pt-2 pb-10 sm:pb-14 md:pb-16 lg:pb-20 xl:pb-10 2xl:pb-0 overflow-hidden scroll-mt-13 sm:scroll-mt-8 lg:scroll-mt-15 xl:scroll-mt-17 2xl:scroll-mt-[80px] 2xl:min-h-[calc(100vh-80px)] 2xl:flex 2xl:flex-col 2xl:justify-center"
+      className="bg-[#0B1120] text-white pt-8 sm:pt-12 md:pt-14 lg:pt-6 xl:pt-8 2xl:pt-2 pb-10 sm:pb-14 md:pb-16 lg:pb-20 xl:pb-10 2xl:pb-0 overflow-hidden scroll-mt-13 sm:scroll-mt-12 lg:scroll-mt-15 xl:scroll-mt-17 2xl:scroll-mt-[80px] 2xl:min-h-[calc(100vh-80px)] 2xl:flex 2xl:flex-col 2xl:justify-center"
     >
       <Container>
         <SectionAnimation>

@@ -41,12 +41,15 @@ export default function Experience() {
 
   // ========================================
   // UI
+  // Size 3 (768x1024): md:min-h-screen makes this section at least
+  // one full screen tall, so the next section (Education) does not
+  // show below the card. lg:min-h-0 keeps size 4, 5 and 6 unchanged.
   // ========================================
 
   return (
     <section
       id="experience"
-      className="bg-[#0B1120] text-white scroll-mt-16 sm:scroll-mt-13 md:scroll-mt-18 lg:scroll-mt-14 xl:scroll-mt-15 pt-6 sm:pt-12 md:pt-6 lg:pt-8 xl:pt-10 pb-10 sm:pb-20 lg:pb-24"
+      className="bg-[#0B1120] text-white scroll-mt-16 sm:scroll-mt-13 md:scroll-mt-22 lg:scroll-mt-14 xl:scroll-mt-15 pt-6 sm:pt-12 md:pt-6 lg:pt-8 xl:pt-10 pb-10 sm:pb-20 lg:pb-24 md:min-h-screen lg:min-h-0"
     >
       <Container>
         <SectionAnimation>

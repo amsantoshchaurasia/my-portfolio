@@ -7,6 +7,7 @@ import {
   FiFolder,
   FiBriefcase,
   FiBookOpen,
+  FiAward,
   FiMail,
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,7 +21,7 @@ const navLinks = [
   { name: "Projects", id: "projects", icon: FiFolder },
   { name: "Experience", id: "experience", icon: FiBriefcase },
   { name: "Education", id: "education", icon: FiBookOpen },
-  // { name: "Certificates", id: "certificates" },
+  { name: "Certificates", id: "certificates", icon: FiAward },
   { name: "Contact", id: "contact", icon: FiMail },
 ];
 
@@ -122,8 +123,8 @@ export default function Navbar() {
       <header
         className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
           scrolled
-            ? "bg-[#0B1120]/80 backdrop-blur-md pt-3 pb-2"
-            : "bg-transparent pt-5 pb-3"
+            ? "bg-[#0B1120]/80 backdrop-blur-md pt-3 md:pt-4 lg:pt-3 pb-2"
+            : "bg-transparent pt-5 md:pt-6 lg:pt-5 pb-3"
         }`}
       >
         <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-6 xl:px-10">
@@ -133,11 +134,11 @@ export default function Navbar() {
             transition={{ duration: 0.5 }}
             className={`transition-all duration-500 rounded-2xl border ${
               scrolled
-                ? "bg-slate-950 border-slate-600/70 shadow-[0_10px_30px_rgba(0,0,0,0.5)] py-2.5"
-                : "bg-slate-900 border-slate-600/50 shadow-[0_8px_25px_rgba(0,0,0,0.3)] py-3.5"
+                ? "bg-slate-950 border-slate-600/70 shadow-[0_10px_30px_rgba(0,0,0,0.5)] py-2.5 md:py-4 lg:py-2.5"
+                : "bg-slate-900 border-slate-600/50 shadow-[0_8px_25px_rgba(0,0,0,0.3)] py-3.5 md:py-5 lg:py-3.5"
             }`}
           >
-            <div className="px-6 sm:px-8 flex items-center justify-between">
+            <div className="px-6 sm:px-8 md:px-10 lg:px-8 flex items-center justify-between">
               
               {/* Logo */}
               <motion.div
@@ -146,14 +147,14 @@ export default function Navbar() {
                 className="cursor-pointer"
                 onClick={() => handleScroll("home")}
               >
-                <h1 className="text-2xl font-black tracking-wider">
+                <h1 className="text-2xl md:text-3xl lg:text-2xl font-black tracking-wider">
                   <span className="text-white">Santosh</span>
                   <span className="text-blue-500 drop-shadow-[0_0_10px_rgba(59,130,246,0.8)]">.</span>
                 </h1>
               </motion.div>
 
               {/* Desktop Navigation */}
-              <nav className="hidden lg:flex items-center gap-5 xl:gap-9">
+              <nav className="hidden lg:flex items-center gap-4 xl:gap-9">
                 {navLinks.map((item) => {
                   const isActive = active === item.id;
                   return (
@@ -180,7 +181,7 @@ export default function Navbar() {
               <div className="hidden lg:block">
                 <Button
                   onClick={handleDownloadResume}
-                  className="transition-transform duration-300 hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(59,130,246,0.3)] whitespace-nowrap text-sm lg:text-sm xl:text-base px-3 lg:px-5 xl:px-6 py-2 lg:py-2.5 xl:py-3"
+                  className="transition-transform duration-300 hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(59,130,246,0.3)] whitespace-nowrap text-sm lg:text-sm xl:text-base px-3 lg:px-4 xl:px-6 py-2 lg:py-2.5 xl:py-3"
                 >
                   Download Resume
                 </Button>
@@ -190,7 +191,7 @@ export default function Navbar() {
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setOpen(true)}
-                className="lg:hidden text-3xl text-white p-1 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                className="lg:hidden text-3xl text-white p-1 md:p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
               >
                 <HiMenuAlt3 />
               </motion.button>
@@ -209,6 +210,15 @@ export default function Navbar() {
           stayed inside header, its "fixed inset-0"
           would be scoped to header's small box height
           instead of the full viewport, collapsing it.
+
+          Size 1 (375x667) = base classes only.
+          Slim side sheet that starts from the top-left
+          corner (72% width, max 300px) so the dimmed page
+          stays visible on the right. Height fits its
+          content, so there is no unwanted empty space.
+          Size 2 (640x900) uses the same sheet (320px wide).
+          Size 3 (768x1024) uses the same sheet (352px wide)
+          with slightly larger text and spacing.
       ======================================== */}
       <AnimatePresence>
         {open && (
@@ -219,7 +229,7 @@ export default function Navbar() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
               onClick={() => setOpen(false)}
-              className="absolute inset-0 bg-black/50 sm:bg-black/65 md:bg-black/70 backdrop-blur-sm sm:backdrop-blur-md"
+              className="absolute inset-0 bg-black/50 sm:bg-black/55 backdrop-blur-sm"
             />
 
             <motion.div
@@ -227,16 +237,19 @@ export default function Navbar() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -12 }}
               transition={{ type: "spring", damping: 24, stiffness: 280 }}
-              className="absolute left-4 top-20 sm:left-8 sm:top-24 md:left-10 md:top-28 w-64 sm:w-80 md:w-96 max-h-[calc(100vh-6rem)] sm:max-h-[calc(100vh-8rem)] overflow-y-auto rounded-2xl bg-[#0F172A] border border-slate-800/80 shadow-[0_20px_50px_rgba(0,0,0,0.55)]"
+              className="absolute left-0 top-0 w-[72%] max-w-[300px] sm:w-80 sm:max-w-none md:w-[22rem] max-h-full overflow-y-auto overscroll-contain rounded-r-2xl origin-top-left bg-[#0F172A] border border-slate-800/80 shadow-[0_20px_50px_rgba(0,0,0,0.55)]"
             >
               {/* ACCENT LINE */}
               <div className="h-[3px] w-full bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-500" />
 
               {/* HEADER */}
-              <div className="flex justify-between items-center px-4 py-3.5 border-b border-slate-800 bg-slate-900/60">
-                <h2 className="text-xs font-bold text-gray-400 tracking-[2px] uppercase">
-                  Menu
-                </h2>
+              <div className="flex justify-between items-center px-4 py-3 sm:py-3.5 md:py-4 border-b border-slate-800 bg-slate-900/60">
+                {/* Brand logo (same as navbar) */}
+                <div className="text-xl sm:text-2xl font-black tracking-wider">
+                  <span className="text-white">Santosh</span>
+                  <span className="text-blue-500 drop-shadow-[0_0_10px_rgba(59,130,246,0.8)]">.</span>
+                </div>
+
                 <motion.button
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setOpen(false)}
@@ -247,7 +260,7 @@ export default function Navbar() {
               </div>
 
               {/* NAV LINKS */}
-              <div className="flex flex-col gap-1.5 p-2.5 sm:p-3 md:p-4">
+              <div className="flex flex-col gap-0.5 sm:gap-1 p-2 sm:p-3 md:p-4">
                 {navLinks.map((item) => {
                   const isActive = active === item.id;
                   const Icon = item.icon;
@@ -256,7 +269,7 @@ export default function Navbar() {
                       whileTap={{ scale: 0.98 }}
                       key={item.id}
                       onClick={() => handleScroll(item.id)}
-                      className={`relative flex items-center gap-3 px-3 sm:px-3.5 md:px-4 py-2.5 sm:py-3 rounded-xl text-[14px] sm:text-[15px] font-medium transition-all duration-200 ${
+                      className={`relative flex items-center gap-3 px-3 sm:px-3.5 md:px-4 py-1.5 sm:py-2 md:py-2.5 rounded-xl text-[14px] sm:text-[15px] md:text-base font-medium transition-all duration-200 ${
                         isActive
                           ? "text-blue-400 bg-blue-500/10"
                           : "text-gray-300 hover:bg-white/5 hover:text-white"
@@ -271,7 +284,7 @@ export default function Navbar() {
                         className={`flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full text-base ${
                           isActive
                             ? "bg-blue-500/20 text-blue-400"
-                            : "bg-white/5 text-gray-400"
+                            : "bg-transparent text-gray-400"
                         }`}
                       >
                         <Icon />
@@ -283,9 +296,9 @@ export default function Navbar() {
               </div>
 
               {/* RESUME BUTTON */}
-              <div className="p-3 border-t border-slate-800">
+              <div className="p-3 md:p-4 border-t border-slate-800">
                 <Button
-                  className="w-full justify-center whitespace-nowrap rounded-xl py-3 text-sm font-bold tracking-[0.5px] shadow-[0_8px_24px_rgba(37,99,235,0.4)] hover:shadow-[0_8px_28px_rgba(37,99,235,0.55)] transition-shadow"
+                  className="w-full justify-center whitespace-nowrap rounded-xl py-2.5 sm:py-3 text-sm md:text-base font-bold tracking-[0.5px] shadow-[0_8px_24px_rgba(37,99,235,0.4)] hover:shadow-[0_8px_28px_rgba(37,99,235,0.55)] transition-shadow"
                   onClick={() => {
                     setOpen(false);
                     handleDownloadResume();

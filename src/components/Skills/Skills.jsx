@@ -149,7 +149,7 @@ export default function Skills() {
   return (
     <section
       id="skills"
-      className="scroll-mt-16 sm:scroll-mt-8 lg:scroll-mt-13 xl:scroll-mt-17 pt-6 sm:pt-14 md:pt-16 lg:pt-8 xl:pt-10 pb-16 sm:pb-20 lg:pb-24"
+      className="scroll-mt-16 sm:scroll-mt-12 lg:scroll-mt-13 xl:scroll-mt-17 pt-6 sm:pt-14 md:pt-16 lg:pt-8 xl:pt-10 pb-16 sm:pb-20 lg:pb-24"
     >
       <Container>
         <SectionAnimation>

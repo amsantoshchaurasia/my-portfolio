@@ -9,6 +9,15 @@ import {
   deleteCertificateFile,
 } from "../../firebase/storage";
 
+// Accepts an array or a comma-separated string, returns a clean array.
+function getTags(raw) {
+  if (!raw) return [];
+
+  const list = Array.isArray(raw) ? raw : String(raw).split(",");
+
+  return list.map((tag) => String(tag).trim()).filter(Boolean);
+}
+
 // ======================================================
 // COMPONENT
 // ======================================================
@@ -36,10 +45,10 @@ export default function CertificatesList({
 
       const data = await getCertificates();
 
-      console.log(
-        "Certificates loaded from Firestore:",
-        data
-      );
+      // console.log(
+      //   "Certificates loaded from Firestore:",
+      //   data
+      // );
 
       setCertificates(data);
     } catch (error) {
@@ -307,6 +316,8 @@ export default function CertificatesList({
                 certificate?.pdf ||
                 null;
 
+              const tags = getTags(certificate.tags);
+
               return (
                 <div
                   key={certificate.id}
@@ -396,13 +407,42 @@ export default function CertificatesList({
                         </p>
                       )}
 
-                      {/* DESCRIPTION */}
+                      {/* TAGS */}
 
+                      {tags.length > 0 ? (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {tags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="
+                                rounded-md
+                                border
+                                border-slate-700
+                                bg-slate-800/60
+                                px-2.5
+                                py-0.5
+                                text-xs
+                                font-medium
+                                text-gray-300
+                              "
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mt-3 text-xs text-gray-600">
+                          No tags added
+                        </p>
+                      )}
+
+                      {/* DESCRIPTION (disabled)
                       {certificate.description && (
                         <p className="mt-3 max-w-3xl leading-7 text-gray-400">
                           {certificate.description}
                         </p>
                       )}
+                      */}
 
                       {/* ==================================================
                           PDF INFORMATION
@@ -433,7 +473,8 @@ export default function CertificatesList({
                               {certificate.fileName}
                             </span>
                           </div>
-                        ) : certificate.pdf ? (
+                        ) : /* LEGACY PDF badge (disabled)
+                        certificate.pdf ? (
                           <div
                             className="
                               inline-flex
@@ -451,7 +492,7 @@ export default function CertificatesList({
                               Legacy PDF
                             </span>
                           </div>
-                        ) : (
+                        ) : */ !certificateUrl ? (
                           <div
                             className="
                               inline-flex
@@ -468,7 +509,7 @@ export default function CertificatesList({
                           >
                             PDF unavailable
                           </div>
-                        )}
+                        ) : null}
 
                       </div>
 
