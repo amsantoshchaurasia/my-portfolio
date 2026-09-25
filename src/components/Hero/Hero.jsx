@@ -7,6 +7,7 @@ import SectionAnimation from "../common/SectionAnimation";
 import { motion } from "framer-motion";
 import { getResumeURL } from "../../firebase/storage";
 import { getHeroData } from "../../firebase/firestore";
+import personal from "../../data/personal";
 
 const GREETING_TEXT = "HELLO I'M";
 
@@ -18,6 +19,12 @@ export default function Hero() {
     title: "Data Analyst",
     description: "Passionate Data Analyst with expertise in Python, SQL, Excel, Power BI and React.",
     imageUrl: "",
+    // Fallback to data/personal.js until Firestore has these fields saved
+    github: personal.github || "",
+    linkedin: personal.linkedin || "",
+    email: personal.email || "",
+    instagram: "",
+    facebook: "",
   });
 
   // Typewriter effect for the "HELLO I'M" greeting
@@ -172,7 +179,7 @@ export default function Hero() {
                 transition={{ delay: 1.25, duration: 0.8 }}
                 className="mt-3 sm:mt-8 flex flex-wrap justify-center lg:justify-start items-center gap-2 sm:gap-4"
               >
-                <SocialIcons />
+                <SocialIcons data={heroData} />
               </motion.div>
             </div>
 

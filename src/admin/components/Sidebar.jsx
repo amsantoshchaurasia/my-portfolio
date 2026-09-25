@@ -11,6 +11,7 @@ import {
   HiMail,
   HiCog,
   HiLogout,
+  HiX,
 } from "react-icons/hi";
 
 import { NavLink } from "react-router-dom";
@@ -92,7 +93,7 @@ const menu = [
 // SIDEBAR
 // ======================================================
 
-export default function Sidebar() {
+export default function Sidebar({ open = false, onClose = () => {} }) {
   // ====================================================
   // LOGOUT
   // ====================================================
@@ -114,14 +115,21 @@ export default function Sidebar() {
   // ====================================================
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-72 flex-col border-r border-slate-700 bg-[#111827]">
+    <aside
+      aria-hidden={!open}
+      className={`fixed left-0 top-0 z-50 flex h-screen h-[100dvh] w-64 max-w-[85vw] flex-col border-r border-slate-700 bg-[#111827] shadow-2xl transition-all duration-300 sm:w-72 ${
+        open
+          ? "translate-x-0"
+          : "-translate-x-full invisible"
+      }`}
+    >
 
       {/* ==================================================
-          LOGO
+          LOGO + CLOSE
       ================================================== */}
 
-      <div className="flex h-20 shrink-0 items-center justify-center border-b border-slate-700">
-        <h1 className="text-2xl font-black tracking-tight">
+      <div className="relative flex h-16 shrink-0 items-center justify-center border-b border-slate-700 sm:h-20">
+        <h1 className="text-xl font-black tracking-tight sm:text-2xl">
           <span className="text-white">
             Santosh
           </span>
@@ -130,24 +138,34 @@ export default function Sidebar() {
             .
           </span>
         </h1>
+
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close menu"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-2 text-xl text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        >
+          <HiX />
+        </button>
       </div>
 
       {/* ==================================================
           NAVIGATION
       ================================================== */}
 
-      <nav className="flex-1 overflow-y-auto px-4 py-6">
-        <div className="space-y-2">
+      <nav className="flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-6">
+        <div className="space-y-1.5 sm:space-y-2">
 
           {menu.map((item) => (
             <NavLink
               key={item.name}
               to={item.path}
+              onClick={onClose}
               className={({ isActive }) =>
                 `
-                group flex items-center gap-4
-                rounded-xl px-5 py-3.5
-                text-base font-medium
+                group flex items-center gap-3 sm:gap-4
+                rounded-xl px-4 py-3 sm:px-5 sm:py-3.5
+                text-sm sm:text-base font-medium
                 transition-all duration-300
 
                 ${
@@ -158,7 +176,7 @@ export default function Sidebar() {
                 `
               }
             >
-              <span className="text-2xl transition-transform duration-300 group-hover:scale-110">
+              <span className="text-xl transition-transform duration-300 group-hover:scale-110 sm:text-2xl">
                 {item.icon}
               </span>
 
@@ -175,21 +193,22 @@ export default function Sidebar() {
           LOGOUT
       ================================================== */}
 
-      <div className="shrink-0 border-t border-slate-700 p-5">
+      <div className="shrink-0 border-t border-slate-700 p-3 sm:p-5">
 
         <button
           type="button"
           onClick={handleLogout}
           className="
-            flex w-full items-center gap-4
-            rounded-xl px-5 py-3.5
+            flex w-full items-center gap-3 sm:gap-4
+            rounded-xl px-4 py-3 sm:px-5 sm:py-3.5
+            text-sm sm:text-base
             font-medium text-red-400
             transition-all duration-300
             hover:bg-red-500/10
             hover:text-red-300
           "
         >
-          <HiLogout className="text-2xl" />
+          <HiLogout className="text-xl sm:text-2xl" />
 
           <span>
             Logout

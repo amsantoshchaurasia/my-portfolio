@@ -5,7 +5,54 @@ import { onAuthStateChanged } from "firebase/auth";
 import { login } from "../services/auth";
 import { auth } from "../../firebase/firebase";
 
-import { HiEye, HiEyeOff } from "react-icons/hi";
+import {
+  HiEye,
+  HiEyeOff,
+  HiMail,
+  HiLockClosed,
+  HiShieldCheck,
+  HiExclamationCircle,
+} from "react-icons/hi";
+
+// Shared input styling: responsive sizing + left icon space + autofill fix
+const inputClass = `
+  w-full
+  rounded-xl
+  border
+  border-slate-700
+  bg-[#111827]/80
+  pl-10
+  sm:pl-12
+  pr-4
+  py-3
+  sm:py-3.5
+  md:py-4
+  text-sm
+  sm:text-base
+  text-white
+  placeholder:text-gray-500
+  outline-none
+  focus:border-blue-500
+  focus:ring-2
+  focus:ring-blue-500/20
+  transition
+  disabled:opacity-50
+  [&:-webkit-autofill]:shadow-[0_0_0_1000px_#111827_inset]
+  [&:-webkit-autofill]:[-webkit-text-fill-color:#ffffff]
+`;
+
+const iconClass = `
+  pointer-events-none
+  absolute
+  left-4
+  top-1/2
+  -translate-y-1/2
+  text-base
+  sm:text-xl
+  text-gray-500
+  transition
+  group-focus-within:text-blue-400
+`;
 
 export default function Login() {
   const navigate = useNavigate();
@@ -64,9 +111,7 @@ export default function Login() {
     setError("");
 
 
-    // ==================================================
     // BASIC VALIDATION
-    // ==================================================
 
     const cleanEmail = email.trim();
 
@@ -108,9 +153,7 @@ export default function Login() {
       );
 
 
-      // ==================================================
       // USER-FRIENDLY FIREBASE ERRORS
-      // ==================================================
 
       if (
         err?.code ===
@@ -172,13 +215,13 @@ export default function Login() {
   if (checkingAuth) {
 
     return (
-      <section className="min-h-screen bg-[#0B1120] flex items-center justify-center">
+      <section className="min-h-screen min-h-[100dvh] bg-[#0B1120] flex items-center justify-center px-4">
 
         <div className="text-center">
 
-          <div className="w-10 h-10 border-4 border-slate-700 border-t-blue-500 rounded-full animate-spin mx-auto"></div>
+          <div className="w-9 h-9 sm:w-10 sm:h-10 border-4 border-slate-700 border-t-blue-500 rounded-full animate-spin mx-auto"></div>
 
-          <p className="mt-4 text-gray-400">
+          <p className="mt-4 text-sm sm:text-base text-gray-400">
             Checking authentication...
           </p>
 
@@ -194,104 +237,94 @@ export default function Login() {
   // ==================================================
 
   return (
-    <section className="min-h-screen bg-[#0B1120] flex items-center justify-center relative overflow-hidden">
+    <section className="min-h-screen min-h-[100dvh] bg-[#0B1120] flex items-center justify-center relative overflow-hidden px-4 py-8 sm:px-6 sm:py-12">
 
 
-      {/* ==================================================
-          BACKGROUND GLOW
-      ================================================== */}
+      {/* BACKGROUND GLOW */}
 
-      <div className="absolute -top-40 -left-40 w-[450px] h-[450px] rounded-full bg-blue-600/20 blur-[120px]" />
+      <div className="absolute -top-24 -left-24 w-[260px] h-[260px] sm:-top-40 sm:-left-40 sm:w-[450px] sm:h-[450px] rounded-full bg-blue-600/20 blur-[90px] sm:blur-[120px]" />
 
-      <div className="absolute bottom-0 right-0 w-[450px] h-[450px] rounded-full bg-cyan-500/20 blur-[120px]" />
+      <div className="absolute bottom-0 right-0 w-[260px] h-[260px] sm:w-[450px] sm:h-[450px] rounded-full bg-cyan-500/20 blur-[90px] sm:blur-[120px]" />
 
 
-      {/* ==================================================
-          LOGIN CARD
-      ================================================== */}
+      {/* LOGIN CARD */}
 
-      <div className="relative z-10 w-full max-w-md rounded-3xl border border-slate-700/50 bg-slate-900/70 backdrop-blur-xl p-10 shadow-[0_0_60px_rgba(37,99,235,.15)]">
+      <div className="relative z-10 w-full max-w-[400px] sm:max-w-md rounded-2xl sm:rounded-3xl border border-slate-700/50 bg-slate-900/70 backdrop-blur-xl p-5 sm:p-8 md:p-10 shadow-[0_0_60px_rgba(37,99,235,.15)]">
+
+        {/* TOP ACCENT LINE */}
+
+        <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/70 to-transparent" />
 
 
-        {/* ==================================================
-            HEADER
-        ================================================== */}
+        {/* HEADER */}
 
         <div className="text-center">
 
-          <h1 className="text-4xl font-black text-white">
+          <div className="mx-auto mb-3 sm:mb-5 flex h-10 w-10 sm:h-14 sm:w-14 items-center justify-center rounded-xl sm:rounded-2xl border border-blue-500/20 bg-blue-500/10 text-xl sm:text-3xl text-blue-400">
+            <HiShieldCheck />
+          </div>
+
+          <h1 className="text-xl sm:text-3xl md:text-4xl font-black text-white">
             Admin Login
           </h1>
 
-          <p className="mt-3 text-gray-400">
+          <p className="mt-1 sm:mt-3 text-xs sm:text-base text-gray-400">
             Portfolio Management System
           </p>
 
         </div>
 
 
-        {/* ==================================================
-            FORM
-        ================================================== */}
+        {/* FORM */}
 
         <form
           onSubmit={handleLogin}
-          className="mt-10 space-y-6"
+          className="mt-5 sm:mt-8 md:mt-9 space-y-3.5 sm:space-y-5"
         >
 
 
-          {/* ==================================================
-              EMAIL
-          ================================================== */}
+          {/* EMAIL */}
 
           <div>
 
-            <label className="block mb-2 text-sm font-medium text-gray-300">
+            <label className="block mb-1.5 sm:mb-2 text-xs sm:text-sm font-medium text-gray-300">
               Email
             </label>
 
-            <input
-              type="email"
-              placeholder="Enter Email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setError("");
-              }}
-              autoComplete="email"
-              disabled={loading}
-              className="
-                w-full
-                rounded-xl
-                border
-                border-slate-700
-                bg-[#111827]
-                px-5
-                py-4
-                text-white
-                placeholder:text-gray-500
-                outline-none
-                focus:border-blue-500
-                transition
-                disabled:opacity-50
-              "
-            />
+            <div className="group relative">
+
+              <HiMail className={iconClass} />
+
+              <input
+                type="email"
+                placeholder="Enter Email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError("");
+                }}
+                autoComplete="email"
+                disabled={loading}
+                className={inputClass}
+              />
+
+            </div>
 
           </div>
 
 
-          {/* ==================================================
-              PASSWORD
-          ================================================== */}
+          {/* PASSWORD */}
 
           <div>
 
-            <label className="block mb-2 text-sm font-medium text-gray-300">
+            <label className="block mb-1.5 sm:mb-2 text-xs sm:text-sm font-medium text-gray-300">
               Password
             </label>
 
 
-            <div className="relative">
+            <div className="group relative">
+
+              <HiLockClosed className={iconClass} />
 
               <input
                 type={
@@ -307,22 +340,7 @@ export default function Login() {
                 }}
                 autoComplete="current-password"
                 disabled={loading}
-                className="
-                  w-full
-                  rounded-xl
-                  border
-                  border-slate-700
-                  bg-[#111827]
-                  px-5
-                  py-4
-                  pr-14
-                  text-white
-                  placeholder:text-gray-500
-                  outline-none
-                  focus:border-blue-500
-                  transition
-                  disabled:opacity-50
-                "
+                className={`${inputClass} !pr-12 sm:!pr-14`}
               />
 
 
@@ -343,14 +361,18 @@ export default function Login() {
                 }
                 className="
                   absolute
-                  right-5
+                  right-2.5
+                  sm:right-3.5
                   top-1/2
                   -translate-y-1/2
-                  text-2xl
+                  p-2
+                  text-lg
+                  sm:text-2xl
                   text-gray-400
                   hover:text-blue-400
                   transition
                   disabled:opacity-50
+                  rounded-lg
                 "
               >
 
@@ -367,15 +389,18 @@ export default function Login() {
           </div>
 
 
-          {/* ==================================================
-              ERROR
-          ================================================== */}
+          {/* ERROR */}
 
           {error && (
 
-            <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
+            <div
+              role="alert"
+              className="flex items-start gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 sm:px-4 sm:py-3"
+            >
 
-              <p className="text-sm text-red-400">
+              <HiExclamationCircle className="mt-0.5 shrink-0 text-base sm:text-lg text-red-400" />
+
+              <p className="text-xs sm:text-sm text-red-400">
                 {error}
               </p>
 
@@ -384,9 +409,7 @@ export default function Login() {
           )}
 
 
-          {/* ==================================================
-              LOGIN BUTTON
-          ================================================== */}
+          {/* LOGIN BUTTON */}
 
           <button
             type="submit"
@@ -396,20 +419,37 @@ export default function Login() {
               !password
             }
             className="
+              flex
               w-full
-              py-4
+              items-center
+              justify-center
+              gap-2
+              py-3
+              sm:py-3.5
+              md:py-4
+              text-sm
+              sm:text-base
               rounded-xl
-              bg-blue-600
-              hover:bg-blue-700
+              bg-gradient-to-r
+              from-blue-600
+              to-blue-500
+              hover:from-blue-500
+              hover:to-blue-400
+              active:scale-[0.98]
               transition
               font-semibold
               text-white
               shadow-lg
-              shadow-blue-600/20
+              shadow-blue-600/25
               disabled:cursor-not-allowed
               disabled:opacity-50
+              disabled:active:scale-100
             "
           >
+
+            {loading && (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+            )}
 
             {loading
               ? "Signing In..."
@@ -418,6 +458,14 @@ export default function Login() {
           </button>
 
         </form>
+
+
+        {/* FOOTER NOTE */}
+
+        <p className="mt-4 sm:mt-6 flex items-center justify-center gap-1.5 text-[11px] sm:text-xs text-gray-500">
+          <HiLockClosed />
+          Secure admin access only
+        </p>
 
       </div>
 

@@ -7,19 +7,25 @@ import {
   getProjects,
   getCertificates,
   getExperiences,
-  getEducations,
   getSkills,
 } from "../../firebase/firestore";
 
 import {
   HiBriefcase,
   HiDocumentText,
-  HiAcademicCap,
   HiCollection,
   HiCode,
   HiPlusCircle,
   HiRefresh,
 } from "react-icons/hi";
+
+
+// Shared classes for the quick action buttons (styling only)
+const actionBtn =
+  "flex items-center justify-center space-x-2 rounded-xl border border-slate-700/80 bg-slate-800/60 px-2 py-2.5 text-[11px] font-medium text-slate-200 transition-all hover:bg-slate-700 sm:px-4 sm:py-3 sm:text-sm 2xl:py-4";
+
+const actionBtnPrimary =
+  "flex items-center justify-center space-x-2 rounded-xl bg-blue-600 px-2 py-2.5 text-[11px] font-medium text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-500 sm:px-4 sm:py-3 sm:text-sm 2xl:py-4";
 
 
 export default function Dashboard() {
@@ -34,7 +40,6 @@ export default function Dashboard() {
     projects: 0,
     certificates: 0,
     experience: 0,
-    education: 0,
     skills: 0,
   });
 
@@ -55,13 +60,11 @@ export default function Dashboard() {
         projects,
         certificates,
         experiences,
-        educations,
         skills,
       ] = await Promise.all([
         getProjects(),
         getCertificates(),
         getExperiences(),
-        getEducations(),
         getSkills(),
       ]);
 
@@ -70,7 +73,6 @@ export default function Dashboard() {
         projects: projects.length,
         certificates: certificates.length,
         experience: experiences.length,
-        education: educations.length,
         skills: skills.length,
       });
 
@@ -79,7 +81,6 @@ export default function Dashboard() {
         projects: projects.length,
         certificates: certificates.length,
         experience: experiences.length,
-        education: educations.length,
         skills: skills.length,
       });
 
@@ -112,6 +113,8 @@ export default function Dashboard() {
 
   // ======================================================
   // STATS
+  // (Education intentionally excluded from the dashboard grid —
+  //  it's still manageable from the sidebar/Quick Actions)
   // ======================================================
 
   const stats = [
@@ -138,13 +141,6 @@ export default function Dashboard() {
     },
 
     {
-      title: "Education",
-      value: counts.education,
-      icon: <HiAcademicCap />,
-      path: "/admin/education",
-    },
-
-    {
       title: "Skills",
       value: counts.skills,
       icon: <HiCode />,
@@ -166,43 +162,15 @@ export default function Dashboard() {
           WELCOME BANNER
       ================================================== */}
 
-      <div
-        className="
-          mb-10
-          flex
-          flex-col
-          border-b
-          border-slate-800
-          pb-6
-          md:flex-row
-          md:items-center
-          md:justify-between
-        "
-      >
+      <div className="mb-4 flex flex-col border-b border-slate-800 pb-3 sm:mb-8 sm:pb-5 md:flex-row md:items-center md:justify-between">
 
         <div>
 
-          <h2
-            className="
-              text-3xl
-              font-extrabold
-              tracking-tight
-              text-white
-              sm:text-4xl
-            "
-          >
+          <h2 className="text-lg font-extrabold tracking-tight text-white sm:text-3xl lg:text-4xl">
             Welcome Back, Santosh 👋
           </h2>
 
-
-          <p
-            className="
-              mt-2
-              text-sm
-              text-slate-400
-              sm:text-base
-            "
-          >
+          <p className="mt-1 text-[11px] leading-snug text-slate-400 sm:mt-2 sm:text-base">
             Here is what's happening with your
             portfolio today. Manage everything
             seamlessly.
@@ -213,31 +181,11 @@ export default function Dashboard() {
 
         {/* SYSTEM STATUS */}
 
-        <div
-          className="
-            mt-4
-            self-start
-            rounded-xl
-            border
-            border-slate-800
-            bg-slate-900/80
-            px-4
-            py-2
-            text-xs
-            text-slate-500
-            md:mt-0
-          "
-        >
+        <div className="mt-2 self-start rounded-xl border border-slate-800 bg-slate-900/80 px-2.5 py-1 text-[10px] text-slate-500 sm:mt-4 sm:px-4 sm:py-2 sm:text-xs md:mt-0 md:shrink-0 md:self-center md:whitespace-nowrap">
 
           System Status:
 
-          <span
-            className="
-              ml-1
-              font-medium
-              text-emerald-400
-            "
-          >
+          <span className="ml-1 font-medium text-emerald-400">
             Live & Connected
           </span>
 
@@ -248,80 +196,31 @@ export default function Dashboard() {
 
       {/* ==================================================
           STATS GRID
+          — mobile/sm: 2x2, md upward: all 4 in one row
       ================================================== */}
 
-      <div
-        className="
-          grid
-          grid-cols-1
-          gap-6
-          sm:grid-cols-2
-          lg:grid-cols-3
-          xl:grid-cols-5
-        "
-      >
+      <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4 2xl:gap-6">
 
         {stats.map((item) => (
 
           <div
             key={item.title}
             onClick={() => navigate(item.path)}
-            className="
-              group
-              relative
-              cursor-pointer
-              rounded-2xl
-              border
-              border-slate-800
-              bg-slate-900/60
-              p-6
-              shadow-lg
-              transition-all
-              duration-300
-              hover:border-blue-500/50
-              hover:bg-slate-900
-              hover:shadow-blue-500/5
-            "
+            className="group relative cursor-pointer rounded-2xl border border-slate-800/70 bg-slate-900/60 p-3 shadow-sm shadow-black/20 transition-all duration-300 hover:border-blue-500/50 hover:bg-slate-900 hover:shadow-blue-500/5 sm:rounded-2xl sm:p-5 sm:shadow-lg 2xl:p-6"
           >
 
-            <div
-              className="
-                flex
-                items-center
-                justify-between
-              "
-            >
+            <div className="flex flex-col-reverse items-start gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
 
               {/* TEXT */}
 
               <div>
 
-                <p
-                  className="
-                    text-xs
-                    font-semibold
-                    uppercase
-                    tracking-wider
-                    text-slate-400
-                    transition-colors
-                    group-hover:text-slate-300
-                  "
-                >
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 transition-colors group-hover:text-slate-300 sm:text-xs sm:tracking-wider">
                   {item.title}
                 </p>
 
-
-                <h3
-                  className="
-                    mt-2
-                    text-4xl
-                    font-black
-                    text-white
-                  "
-                >
-
+                <h3 className="mt-0.5 text-lg font-extrabold tabular-nums text-white sm:mt-1.5 sm:text-3xl 2xl:text-4xl">
                   {loading ? "—" : item.value}
-
                 </h3>
 
               </div>
@@ -329,27 +228,8 @@ export default function Dashboard() {
 
               {/* ICON */}
 
-              <div
-                className="
-                  flex
-                  h-14
-                  w-14
-                  items-center
-                  justify-center
-                  rounded-xl
-                  border
-                  border-blue-500/20
-                  bg-blue-600/10
-                  text-2xl
-                  text-blue-400
-                  transition-transform
-                  duration-300
-                  group-hover:scale-110
-                "
-              >
-
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-blue-500/20 bg-gradient-to-br from-blue-600/20 to-blue-500/5 text-sm text-blue-400 transition-transform duration-300 group-hover:scale-110 sm:h-12 sm:w-12 sm:rounded-xl sm:text-xl 2xl:h-14 2xl:w-14 2xl:text-2xl">
                 {item.icon}
-
               </div>
 
             </div>
@@ -357,21 +237,7 @@ export default function Dashboard() {
 
             {/* BOTTOM */}
 
-            <div
-              className="
-                mt-4
-                flex
-                items-center
-                justify-between
-                border-t
-                border-slate-800/60
-                pt-4
-                text-xs
-                text-slate-400
-                transition-colors
-                group-hover:text-blue-400
-              "
-            >
+            <div className="mt-2 flex items-center justify-between border-t border-slate-800/40 pt-2 text-[10px] text-slate-400 transition-colors group-hover:text-blue-400 sm:mt-3 sm:border-slate-800/60 sm:pt-3 sm:text-xs 2xl:mt-4 2xl:pt-4">
 
               <span>
                 Manage entries
@@ -394,30 +260,11 @@ export default function Dashboard() {
           QUICK MANAGEMENT ACTIONS
       ================================================== */}
 
-      <div
-        className="
-          mt-10
-          rounded-2xl
-          border
-          border-slate-800
-          bg-slate-900/60
-          p-6
-          sm:p-8
-        "
-      >
+      <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900/60 p-3 sm:mt-8 sm:rounded-2xl sm:p-6 2xl:p-8">
 
         {/* HEADER */}
 
-        <h3
-          className="
-            flex
-            items-center
-            space-x-2
-            text-xl
-            font-bold
-            text-white
-          "
-        >
+        <h3 className="flex items-center space-x-2 text-sm font-bold text-white sm:text-xl">
 
           <HiPlusCircle className="text-blue-500" />
 
@@ -428,30 +275,16 @@ export default function Dashboard() {
         </h3>
 
 
-        <p
-          className="
-            mt-1
-            text-xs
-            text-slate-400
-            sm:text-sm
-          "
-        >
+        <p className="mt-0.5 text-[11px] leading-snug text-slate-400 sm:mt-1 sm:text-sm">
           Direct shortcuts to add or modify
           core components of your portfolio
           website.
         </p>
 
 
-        {/* ACTION BUTTONS */}
+        {/* ACTION BUTTONS — uniform-size grid from sm upward */}
 
-        <div
-          className="
-            mt-6
-            flex
-            flex-wrap
-            gap-4
-          "
-        >
+        <div className="mt-3 grid grid-cols-2 gap-1.5 sm:mt-5 sm:grid-cols-3 sm:gap-3 xl:grid-cols-6 xl:gap-4">
 
           {/* PROJECT */}
 
@@ -459,22 +292,7 @@ export default function Dashboard() {
             onClick={() =>
               navigate("/admin/projects")
             }
-            className="
-              flex
-              items-center
-              space-x-2
-              rounded-xl
-              bg-blue-600
-              px-5
-              py-3
-              text-sm
-              font-medium
-              text-white
-              shadow-lg
-              shadow-blue-600/20
-              transition-all
-              hover:bg-blue-500
-            "
+            className={actionBtnPrimary}
           >
 
             <span>
@@ -490,22 +308,7 @@ export default function Dashboard() {
             onClick={() =>
               navigate("/admin/certificates")
             }
-            className="
-              flex
-              items-center
-              space-x-2
-              rounded-xl
-              border
-              border-slate-700
-              bg-slate-800
-              px-5
-              py-3
-              text-sm
-              font-medium
-              text-slate-200
-              transition-all
-              hover:bg-slate-700
-            "
+            className={actionBtn}
           >
 
             <span>
@@ -521,22 +324,7 @@ export default function Dashboard() {
             onClick={() =>
               navigate("/admin/experience")
             }
-            className="
-              flex
-              items-center
-              space-x-2
-              rounded-xl
-              border
-              border-slate-700
-              bg-slate-800
-              px-5
-              py-3
-              text-sm
-              font-medium
-              text-slate-200
-              transition-all
-              hover:bg-slate-700
-            "
+            className={actionBtn}
           >
 
             <span>
@@ -552,22 +340,7 @@ export default function Dashboard() {
             onClick={() =>
               navigate("/admin/education")
             }
-            className="
-              flex
-              items-center
-              space-x-2
-              rounded-xl
-              border
-              border-slate-700
-              bg-slate-800
-              px-5
-              py-3
-              text-sm
-              font-medium
-              text-slate-200
-              transition-all
-              hover:bg-slate-700
-            "
+            className={actionBtn}
           >
 
             <span>
@@ -583,22 +356,7 @@ export default function Dashboard() {
             onClick={() =>
               navigate("/admin/skills")
             }
-            className="
-              flex
-              items-center
-              space-x-2
-              rounded-xl
-              border
-              border-slate-700
-              bg-slate-800
-              px-5
-              py-3
-              text-sm
-              font-medium
-              text-slate-200
-              transition-all
-              hover:bg-slate-700
-            "
+            className={actionBtn}
           >
 
             <span>
@@ -614,28 +372,13 @@ export default function Dashboard() {
             onClick={() =>
               navigate("/admin/hero")
             }
-            className="
-              flex
-              items-center
-              space-x-2
-              rounded-xl
-              border
-              border-slate-700
-              bg-slate-800
-              px-5
-              py-3
-              text-sm
-              font-medium
-              text-slate-200
-              transition-all
-              hover:bg-slate-700
-            "
+            className={actionBtn}
           >
 
             <HiRefresh className="text-blue-400" />
 
             <span>
-              Update Hero Section
+              Update Hero
             </span>
 
           </button>
