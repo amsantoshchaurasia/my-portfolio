@@ -1,8 +1,22 @@
 import { HiBell, HiUserCircle } from "react-icons/hi";
 import { useEffect, useState } from "react";
+import { getHeroData } from "../../firebase/firestore";
+
+// ======================================================
+// MODULE-LEVEL CACHE
+// Header remounts on every page navigation (since it's
+// rendered fresh inside Layout each time). Without a cache,
+// that means a fresh Firebase call + a 1-2s window where the
+// fallback icon shows instead of the real photo — the "blink".
+// Storing the last-known photo outside the component means any
+// remount starts with it already in state, so there's nothing
+// to flash. We still fetch in the background to keep it fresh.
+// ======================================================
+let cachedAdminPhoto = "";
 
 export default function Header({ title }) {
   const [time, setTime] = useState({ short: "", full: "" });
+  const [adminPhoto, setAdminPhoto] = useState(cachedAdminPhoto);
 
   useEffect(() => {
     function updateTime() {
@@ -33,6 +47,30 @@ export default function Header({ title }) {
     const timer = setInterval(updateTime, 60000);
 
     return () => clearInterval(timer);
+  }, []);
+
+  // ======================================================
+  // ADMIN PHOTO — mirrors whatever photo is set in Hero
+  // Section, so this header always stays in sync with it.
+  // Reads from cache first (instant, no blink), then
+  // re-fetches to catch any update made in Hero section.
+  // ======================================================
+
+  useEffect(() => {
+    async function loadAdminPhoto() {
+      try {
+        const data = await getHeroData();
+
+        if (data?.imageUrl) {
+          cachedAdminPhoto = data.imageUrl;
+          setAdminPhoto(data.imageUrl);
+        }
+      } catch (error) {
+        console.error("Error loading admin photo in Header:", error);
+      }
+    }
+
+    loadAdminPhoto();
   }, []);
 
   return (
@@ -85,7 +123,15 @@ export default function Header({ title }) {
           {/* Admin Profile */}
 
           <div className="flex items-center gap-3">
-            <HiUserCircle className="text-4xl text-blue-500 sm:text-5xl" />
+            {adminPhoto ? (
+              <img
+                src={adminPhoto}
+                alt="Admin"
+                className="h-10 w-10 shrink-0 rounded-full border-2 border-blue-500 object-cover object-top sm:h-12 sm:w-12"
+              />
+            ) : (
+              <HiUserCircle className="text-4xl text-blue-500 sm:text-5xl" />
+            )}
 
             <div className="hidden sm:block">
               <h3 className="font-semibold text-white">

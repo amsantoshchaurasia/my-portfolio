@@ -13,7 +13,6 @@ const initialForm = {
   title: "",
   company: "",
   year: "",
-  type: "other",
   order: 1,
   tags: "",
 };
@@ -30,6 +29,7 @@ const TAG_SUGGESTIONS = [
   "Power BI",
   "Excel",
   "Web Development",
+  "Other",
 ];
 
 // "Power BI, SQL" -> ["Power BI", "SQL"]  (trimmed, no duplicates)
@@ -64,7 +64,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 // CLOUDINARY CONFIG
 // ======================================================
 // Replace with your actual Cloudinary Cloud Name if different
-const CLOUD_NAME = "ftdks0h2"; 
+const CLOUD_NAME = "ftdks0h2";
 const UPLOAD_PRESET = "portfolio_upload";
 
 async function uploadToCloudinary(file) {
@@ -155,7 +155,6 @@ export default function CertificatesForm({
         title: editingCertificate.title || "",
         company: editingCertificate.company || "",
         year: editingCertificate.year || "",
-        type: editingCertificate.type || "major",
         order: editingCertificate.order || 1,
         tags: tagsToString(editingCertificate.tags),
       });
@@ -256,9 +255,7 @@ export default function CertificatesForm({
     // ----------------------------------------------------
 
     if (selectedFile.size > MAX_FILE_SIZE) {
-      setError(
-        "Certificate PDF must be smaller than 10 MB."
-      );
+      setError("Certificate PDF must be smaller than 10 MB.");
 
       event.target.value = "";
       setFile(null);
@@ -277,45 +274,7 @@ export default function CertificatesForm({
   // IMAGE VALIDATION (THUMBNAIL - disabled)
   // ======================================================
   //
-  // function handleImageChange(event) {
-  //   const selectedImage = event.target.files?.[0];
-  //
-  //   setError("");
-  //   setMessage("");
-  //
-  //   if (!selectedImage) {
-  //     setImageFile(null);
-  //     setImagePreview(null);
-  //     return;
-  //   }
-  //
-  //   if (!selectedImage.type.startsWith("image/")) {
-  //     setError("Please select a valid image file (JPG, PNG, WEBP).");
-  //
-  //     event.target.value = "";
-  //     setImageFile(null);
-  //     setImagePreview(null);
-  //
-  //     return;
-  //   }
-  //
-  //   if (selectedImage.size > MAX_IMAGE_SIZE) {
-  //     setError("Certificate image must be smaller than 5 MB.");
-  //
-  //     event.target.value = "";
-  //     setImageFile(null);
-  //     setImagePreview(null);
-  //
-  //     return;
-  //   }
-  //
-  //   if (imagePreview) {
-  //     URL.revokeObjectURL(imagePreview);
-  //   }
-  //
-  //   setImageFile(selectedImage);
-  //   setImagePreview(URL.createObjectURL(selectedImage));
-  // }
+  // function handleImageChange(event) { ... }
 
   // ======================================================
   // FORM VALIDATION
@@ -385,7 +344,6 @@ export default function CertificatesForm({
         title: form.title.trim(),
         company: form.company.trim(),
         year: form.year.trim(),
-        type: form.type,
         order: Number(form.order) || 1,
         tags: parseTags(form.tags),
       };
@@ -401,11 +359,6 @@ export default function CertificatesForm({
       }
 
       // UPLOAD NEW IMAGE TO CLOUDINARY IF SELECTED (THUMBNAIL - disabled)
-      //
-      // if (imageFile) {
-      //   const uploadedImage = await uploadImageToCloudinary(imageFile);
-      //   certificateData.imageUrl = uploadedImage.imageUrl;
-      // }
 
       // ==================================================
       // CREATE NEW CERTIFICATE
@@ -421,10 +374,7 @@ export default function CertificatesForm({
       // ==================================================
 
       else {
-        await updateCertificate(
-          editingCertificate.id,
-          certificateData
-        );
+        await updateCertificate(editingCertificate.id, certificateData);
         setMessage("Certificate updated successfully.");
       }
 
@@ -435,11 +385,6 @@ export default function CertificatesForm({
       setForm(initialForm);
       setFile(null);
       // THUMBNAIL (disabled)
-      // if (imagePreview) {
-      //   URL.revokeObjectURL(imagePreview);
-      // }
-      // setImageFile(null);
-      // setImagePreview(null);
 
       // ==================================================
       // CLEAR FILE INPUTS
@@ -450,10 +395,6 @@ export default function CertificatesForm({
         fileInput.value = "";
       }
       // THUMBNAIL (disabled)
-      // const imageInput = document.getElementById("certificate-image");
-      // if (imageInput) {
-      //   imageInput.value = "";
-      // }
 
       // ==================================================
       // REFRESH ADMIN LIST & EXIT EDIT
@@ -466,10 +407,7 @@ export default function CertificatesForm({
       }
     } catch (error) {
       console.error("Certificate save error:", error);
-      setError(
-        error?.message ||
-          "Failed to save certificate. Please try again."
-      );
+      setError(error?.message || "Failed to save certificate. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -487,11 +425,6 @@ export default function CertificatesForm({
     setForm(initialForm);
     setFile(null);
     // THUMBNAIL (disabled)
-    // if (imagePreview) {
-    //   URL.revokeObjectURL(imagePreview);
-    // }
-    // setImageFile(null);
-    // setImagePreview(null);
 
     setMessage("");
     setError("");
@@ -501,10 +434,6 @@ export default function CertificatesForm({
       fileInput.value = "";
     }
     // THUMBNAIL (disabled)
-    // const imageInput = document.getElementById("certificate-image");
-    // if (imageInput) {
-    //   imageInput.value = "";
-    // }
 
     onCancelEdit?.();
   }
@@ -517,147 +446,76 @@ export default function CertificatesForm({
 
   const selectedTags = parseTags(form.tags);
 
+  const labelClasses = "mb-1.5 block text-xs font-medium text-gray-400";
+
+  const inputClasses =
+    "w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2.5 " +
+    "text-sm text-white placeholder:text-gray-500 outline-none transition " +
+    "focus:border-blue-500 focus:bg-slate-800 focus:ring-1 focus:ring-blue-500/30 " +
+    "disabled:cursor-not-allowed disabled:opacity-60";
+
   // ======================================================
   // UI
   // ======================================================
 
-  // ======================================================
-  // THUMBNAIL IMAGE UI (disabled)
-  // To bring it back: uncomment the other "THUMBNAIL" blocks above,
-  // then paste the JSX below inside the <form>, just before the
-  // "PDF UPLOAD" block (remove the leading "// ").
-  // ======================================================
-  //
-  // {/* CERTIFICATE IMAGE (THUMBNAIL) */}
-  // <div>
-  //   <label
-  //     htmlFor="certificate-image"
-  //     className="mb-2 block text-sm font-medium text-gray-300"
-  //   >
-  //     Certificate Image (thumbnail)
-  //   </label>
-  //
-  //   <div className="rounded-2xl border border-dashed border-slate-600 bg-slate-950/60 p-5">
-  //     {/* CURRENT IMAGE */}
-  //     {isEditing && editingCertificate.imageUrl && !imagePreview && (
-  //       <div className="mb-4 overflow-hidden rounded-xl border border-blue-500/20 bg-blue-500/5">
-  //         <img
-  //           src={editingCertificate.imageUrl}
-  //           alt="Current certificate thumbnail"
-  //           className="h-32 w-full object-cover"
-  //         />
-  //         <p className="p-3 text-xs text-gray-500">
-  //           Select a new image only if you want to replace this thumbnail.
-  //         </p>
-  //       </div>
-  //     )}
-  //
-  //     {/* IMAGE INPUT */}
-  //     <input
-  //       id="certificate-image"
-  //       type="file"
-  //       accept="image/*"
-  //       onChange={handleImageChange}
-  //       disabled={loading}
-  //       className="block w-full text-sm text-gray-400 file:mr-4 file:rounded-lg file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-  //     />
-  //
-  //     <p className="mt-3 text-xs text-gray-500">
-  //       JPG, PNG or WEBP. Maximum file size: 5 MB. Optional.
-  //     </p>
-  //
-  //     {isEditing && (
-  //       <p className="mt-1 text-xs text-gray-500">
-  //         Leave empty to keep the existing image.
-  //       </p>
-  //     )}
-  //
-  //     {/* SELECTED IMAGE PREVIEW */}
-  //     {imagePreview && (
-  //       <div className="mt-4 overflow-hidden rounded-xl border border-green-500/20 bg-green-500/5">
-  //         <img
-  //           src={imagePreview}
-  //           alt="Selected certificate thumbnail preview"
-  //           className="h-32 w-full object-cover"
-  //         />
-  //         <p className="p-3 text-xs text-green-400">
-  //           {imageFile?.name} - {(imageFile.size / 1024 / 1024).toFixed(2)} MB
-  //         </p>
-  //       </div>
-  //     )}
-  //   </div>
-  // </div>
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4">
       {/* HEADER */}
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[4px] text-blue-400">
-          {isEditing ? "Edit Certificate" : "Add Certificate"}
-        </p>
-
-        <h3 className="mt-2 text-2xl font-bold text-white">
-          {isEditing ? "Update Certificate" : "Upload New Certificate"}
+      <div className="border-b border-slate-800 pb-3">
+        <h3 className="text-sm font-semibold text-white">
+          {isEditing ? "Edit certificate" : "Add new certificate"}
         </h3>
-
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="mt-0.5 text-xs text-gray-500">
           Upload your certificate PDF via Cloudinary.
         </p>
       </div>
 
       {/* SUCCESS MESSAGE */}
       {message && (
-        <div className="rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400">
+        <div className="rounded-lg border border-green-500/25 bg-green-500/10 px-3.5 py-2.5 text-xs text-green-400">
           {message}
         </div>
       )}
 
       {/* ERROR MESSAGE */}
       {error && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div className="rounded-lg border border-red-500/25 bg-red-500/10 px-3.5 py-2.5 text-xs text-red-400">
           {error}
         </div>
       )}
 
-      {/* TITLE */}
-      <div>
-        <label className="mb-2 block text-sm font-medium text-gray-300">
-          Certificate Title
-        </label>
+      {/* TITLE + COMPANY */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className={labelClasses}>Certificate title</label>
+          <input
+            type="text"
+            name="title"
+            value={form.title}
+            onChange={handleChange}
+            placeholder="BCG Data Science Job Simulation"
+            disabled={loading}
+            className={inputClasses}
+          />
+        </div>
 
-        <input
-          type="text"
-          name="title"
-          value={form.title}
-          onChange={handleChange}
-          placeholder="BCG Data Science Job Simulation"
-          disabled={loading}
-          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
-        />
-      </div>
-
-      {/* COMPANY / ISSUER */}
-      <div>
-        <label className="mb-2 block text-sm font-medium text-gray-300">
-          Company / Issuer
-        </label>
-
-        <input
-          type="text"
-          name="company"
-          value={form.company}
-          onChange={handleChange}
-          placeholder="Forage"
-          disabled={loading}
-          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
-        />
+        <div>
+          <label className={labelClasses}>Company / Issuer</label>
+          <input
+            type="text"
+            name="company"
+            value={form.company}
+            onChange={handleChange}
+            placeholder="Forage"
+            disabled={loading}
+            className={inputClasses}
+          />
+        </div>
       </div>
 
       {/* TAGS / SKILLS */}
       <div>
-        <label className="mb-2 block text-sm font-medium text-gray-300">
-          Skills / Tags
-        </label>
+        <label className={labelClasses}>Skills / Tags</label>
 
         <input
           type="text"
@@ -666,11 +524,11 @@ export default function CertificatesForm({
           onChange={handleChange}
           placeholder="e.g. Power BI, SQL"
           disabled={loading}
-          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+          className={inputClasses}
         />
 
         {/* QUICK PICK */}
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
           {TAG_SUGGESTIONS.map((tag) => {
             const active = selectedTags.some(
               (item) => item.toLowerCase() === tag.toLowerCase()
@@ -682,10 +540,10 @@ export default function CertificatesForm({
                 type="button"
                 onClick={() => toggleTag(tag)}
                 disabled={loading}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
                   active
-                    ? "border-blue-500 bg-blue-500/15 text-blue-400"
-                    : "border-slate-700 bg-slate-900 text-gray-400 hover:border-slate-500 hover:text-white"
+                    ? "border-blue-500/50 bg-blue-500/15 text-blue-400"
+                    : "border-slate-700 bg-slate-800/60 text-gray-400 hover:border-slate-600 hover:text-white"
                 }`}
               >
                 {active ? "✓ " : "+ "}
@@ -695,20 +553,16 @@ export default function CertificatesForm({
           })}
         </div>
 
-        <p className="mt-2 text-xs text-gray-500">
+        <p className="mt-1.5 text-[11px] text-gray-600">
           Separate multiple tags with commas. These become the filter tabs on
           your portfolio, so keep spelling consistent.
         </p>
       </div>
 
-      {/* YEAR / TYPE / ORDER */}
-      <div className="grid gap-5 md:grid-cols-3">
-        {/* YEAR */}
+      {/* YEAR / ORDER */}
+      <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-300">
-            Year
-          </label>
-
+          <label className={labelClasses}>Year</label>
           <input
             type="text"
             name="year"
@@ -717,34 +571,12 @@ export default function CertificatesForm({
             placeholder="2026"
             maxLength={4}
             disabled={loading}
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+            className={inputClasses}
           />
         </div>
 
-        {/* TYPE */}
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-300">
-            Type
-          </label>
-
-          <select
-            name="type"
-            value={form.type}
-            onChange={handleChange}
-            disabled={loading}
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <option value="major">Featured</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-
-        {/* ORDER */}
-        <div>
-          <label className="mb-2 block text-sm font-medium text-gray-300">
-            Display Order
-          </label>
-
+          <label className={labelClasses}>Display order</label>
           <input
             type="number"
             name="order"
@@ -752,32 +584,29 @@ export default function CertificatesForm({
             value={form.order}
             onChange={handleChange}
             disabled={loading}
-            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+            className={inputClasses}
           />
         </div>
       </div>
 
       {/* PDF UPLOAD */}
       <div>
-        <label
-          htmlFor="certificate-pdf"
-          className="mb-2 block text-sm font-medium text-gray-300"
-        >
+        <label htmlFor="certificate-pdf" className={labelClasses}>
           Certificate PDF
         </label>
 
-        <div className="rounded-2xl border border-dashed border-slate-600 bg-slate-950/60 p-5">
+        <div className="rounded-lg border border-dashed border-slate-700 bg-slate-800/30 p-3.5">
           {/* CURRENT FILE */}
           {isEditing && editingCertificate.fileName && (
-            <div className="mb-4 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
-              <p className="text-xs uppercase tracking-wider text-gray-500">
-                Current Certificate
+            <div className="mb-3 rounded-lg border border-blue-500/20 bg-blue-500/5 px-3 py-2.5">
+              <p className="text-[10px] uppercase tracking-wider text-gray-500">
+                Current certificate
               </p>
-              <p className="mt-1 break-all text-sm text-blue-400">
+              <p className="mt-0.5 break-all text-xs text-blue-400">
                 {editingCertificate.fileName}
               </p>
-              <p className="mt-1 text-xs text-gray-500">
-                Select a new PDF only if you want to replace this certificate file.
+              <p className="mt-1 text-[11px] text-gray-500">
+                Select a new PDF only if you want to replace this file.
               </p>
             </div>
           )}
@@ -789,25 +618,25 @@ export default function CertificatesForm({
             accept="application/pdf,.pdf"
             onChange={handleFileChange}
             disabled={loading}
-            className="block w-full text-sm text-gray-400 file:mr-4 file:rounded-lg file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="block w-full text-xs text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
           />
 
-          <p className="mt-3 text-xs text-gray-500">
+          <p className="mt-2.5 text-[11px] text-gray-600">
             PDF files only. Maximum file size: 10 MB.
           </p>
 
           {isEditing && (
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-[11px] text-gray-600">
               Leave empty to keep the existing PDF.
             </p>
           )}
 
           {/* SELECTED FILE */}
           {file && (
-            <div className="mt-4 rounded-xl border border-green-500/20 bg-green-500/5 px-4 py-3">
-              <p className="text-xs text-gray-500">Selected file</p>
-              <p className="mt-1 break-all text-sm text-green-400">{file.name}</p>
-              <p className="mt-1 text-xs text-gray-500">
+            <div className="mt-3 rounded-lg border border-green-500/20 bg-green-500/5 px-3 py-2.5">
+              <p className="text-[11px] text-gray-500">Selected file</p>
+              <p className="mt-0.5 break-all text-xs text-green-400">{file.name}</p>
+              <p className="mt-0.5 text-[11px] text-gray-500">
                 {(file.size / 1024 / 1024).toFixed(2)} MB
               </p>
             </div>
@@ -816,19 +645,21 @@ export default function CertificatesForm({
       </div>
 
       {/* BUTTONS */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-col gap-2.5 border-t border-slate-800 pt-3.5 sm:flex-row-reverse">
         <button
           type="submit"
           disabled={loading}
-          className="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold
+            text-white transition hover:bg-blue-500 disabled:cursor-not-allowed
+            disabled:opacity-60 sm:w-auto sm:px-6"
         >
           {loading
             ? isEditing
               ? "Updating..."
               : "Uploading..."
             : isEditing
-            ? "Update Certificate"
-            : "Upload Certificate"}
+              ? "Save changes"
+              : "Upload certificate"}
         </button>
 
         {isEditing && (
@@ -836,7 +667,9 @@ export default function CertificatesForm({
             type="button"
             onClick={handleCancel}
             disabled={loading}
-            className="rounded-xl border border-slate-600 px-6 py-3 font-semibold text-gray-300 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-lg border border-slate-700 bg-slate-800/60 py-2.5
+              text-sm font-semibold text-gray-300 transition hover:text-white
+              disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-6"
           >
             Cancel
           </button>

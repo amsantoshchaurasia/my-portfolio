@@ -237,7 +237,7 @@ export default function Navbar() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -12 }}
               transition={{ type: "spring", damping: 24, stiffness: 280 }}
-              className="absolute left-0 top-0 w-[72%] max-w-[300px] sm:w-80 sm:max-w-none md:w-[22rem] max-h-full overflow-y-auto overscroll-contain rounded-r-2xl origin-top-left bg-[#0F172A] border border-slate-800/80 shadow-[0_20px_50px_rgba(0,0,0,0.55)]"
+              className="absolute left-0 top-0 w-[72%] max-w-[300px] sm:w-80 sm:max-w-none md:w-[22rem] max-h-full overflow-y-auto overscroll-contain rounded-r-2xl origin-top-left bg-[#0F172A] border border-slate-800 shadow-[0_16px_40px_rgba(0,0,0,0.45)]"
             >
               {/* ACCENT LINE */}
               <div className="h-[3px] w-full bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-500" />
@@ -259,8 +259,11 @@ export default function Navbar() {
                 </motion.button>
               </div>
 
-              {/* NAV LINKS */}
-              <div className="flex flex-col gap-0.5 sm:gap-1 p-2 sm:p-3 md:p-4">
+              {/* NAV LINKS — "MENU" label removed; a small top
+                  padding on the list keeps spacing balanced under
+                  the header divider without needing the label. */}
+
+              <div className="flex flex-col gap-0.5 sm:gap-1 px-3 pt-3 pb-2 sm:px-3.5 md:px-4">
                 {navLinks.map((item) => {
                   const isActive = active === item.id;
                   const Icon = item.icon;
@@ -269,7 +272,7 @@ export default function Navbar() {
                       whileTap={{ scale: 0.98 }}
                       key={item.id}
                       onClick={() => handleScroll(item.id)}
-                      className={`relative flex items-center gap-3 px-3 sm:px-3.5 md:px-4 py-1.5 sm:py-2 md:py-2.5 rounded-xl text-[14px] sm:text-[15px] md:text-base font-medium transition-all duration-200 ${
+                      className={`relative flex items-center gap-3 px-3 sm:px-3.5 md:px-4 py-2 sm:py-2.5 rounded-lg text-[14px] sm:text-[15px] md:text-base font-medium transition-all duration-200 ${
                         isActive
                           ? "text-blue-400 bg-blue-500/10"
                           : "text-gray-300 hover:bg-white/5 hover:text-white"
@@ -277,14 +280,14 @@ export default function Navbar() {
                     >
                       {/* Active-item accent bar */}
                       {isActive && (
-                        <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+                        <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-blue-500" />
                       )}
 
                       <span
                         className={`flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full text-base ${
                           isActive
-                            ? "bg-blue-500/20 text-blue-400"
-                            : "bg-transparent text-gray-400"
+                            ? "bg-blue-500/15 text-blue-400"
+                            : "bg-slate-800/60 text-gray-400"
                         }`}
                       >
                         <Icon />
@@ -296,9 +299,9 @@ export default function Navbar() {
               </div>
 
               {/* RESUME BUTTON */}
-              <div className="p-3 md:p-4 border-t border-slate-800">
+              <div className="p-3 sm:p-3.5 md:p-4 border-t border-slate-800">
                 <Button
-                  className="w-full justify-center whitespace-nowrap rounded-xl py-2.5 sm:py-3 text-sm md:text-base font-bold tracking-[0.5px] shadow-[0_8px_24px_rgba(37,99,235,0.4)] hover:shadow-[0_8px_28px_rgba(37,99,235,0.55)] transition-shadow"
+                  className="w-full justify-center whitespace-nowrap rounded-lg py-2.5 sm:py-3 text-sm md:text-base font-semibold tracking-wide shadow-[0_4px_16px_rgba(37,99,235,0.3)] hover:shadow-[0_4px_20px_rgba(37,99,235,0.4)] transition-shadow"
                   onClick={() => {
                     setOpen(false);
                     handleDownloadResume();

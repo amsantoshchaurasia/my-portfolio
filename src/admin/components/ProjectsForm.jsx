@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 
-import {
-  createProject,
-  updateProject,
-} from "../../firebase/firestore";
+import { createProject, updateProject } from "../../firebase/firestore";
 
 export default function ProjectsForm({
   onProjectAdded,
@@ -13,6 +10,7 @@ export default function ProjectsForm({
   const [form, setForm] = useState({
     title: "",
     year: "2026",
+    category: "web",
     description: "",
     technologies: "",
     github: "",
@@ -30,10 +28,11 @@ export default function ProjectsForm({
       setForm({
         title: editingProject.title || "",
 
-        // FIX:
         // Firestore may contain year as a number,
         // so convert it to string for the form.
         year: String(editingProject.year || "2026"),
+
+        category: editingProject.category || "web",
 
         description: editingProject.description || "",
 
@@ -49,6 +48,7 @@ export default function ProjectsForm({
       setForm({
         title: "",
         year: "2026",
+        category: "web",
         description: "",
         technologies: "",
         github: "",
@@ -63,11 +63,7 @@ export default function ProjectsForm({
 
   function handleChange(e) {
     const { name, value } = e.target;
-
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   }
 
   // ========================================
@@ -102,64 +98,39 @@ export default function ProjectsForm({
 
       const projectData = {
         title: form.title.trim(),
-
-        // FIX:
-        // Always safely convert year to string before trim.
         year: String(form.year).trim(),
-
+        category: form.category || "web",
         description: form.description.trim(),
-
         technologies,
-
         github: form.github.trim(),
-
         order: Number(form.order) || 1,
       };
 
-      // ========================================
       // UPDATE EXISTING PROJECT
-      // ========================================
-
       if (editingProject) {
-        await updateProject(
-          editingProject.id,
-          projectData
-        );
-
+        await updateProject(editingProject.id, projectData);
         alert("Project updated successfully.");
-
         onProjectAdded?.();
-
         onCancelEdit?.();
-
         return;
       }
 
-      // ========================================
       // CREATE NEW PROJECT
-      // ========================================
-
       await createProject(projectData);
-
       alert("Project added successfully.");
-
       onProjectAdded?.();
 
-      // Reset form
       setForm({
         title: "",
         year: "2026",
+        category: "web",
         description: "",
         technologies: "",
         github: "",
         order: "",
       });
     } catch (error) {
-      console.error(
-        "Error saving project:",
-        error
-      );
-
+      console.error("Error saving project:", error);
       alert(
         editingProject
           ? "Failed to update project."
@@ -170,213 +141,123 @@ export default function ProjectsForm({
     }
   }
 
+  const labelClasses = "mb-1.5 block text-xs font-medium text-gray-400";
+
+  const inputClasses =
+    "w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2.5 " +
+    "text-sm text-white placeholder:text-gray-500 outline-none transition " +
+    "focus:border-blue-500 focus:bg-slate-800 focus:ring-1 focus:ring-blue-500/30";
+
   // ========================================
   // UI
   // ========================================
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-6"
-    >
-
-      {/* ========================================
-          HEADER
-      ======================================== */}
-
-      <div>
-        <h3 className="text-2xl font-bold text-white">
-          {editingProject
-            ? "Edit Project"
-            : "Add New Project"}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* HEADER */}
+      <div className="border-b border-slate-800 pb-3">
+        <h3 className="text-sm font-semibold text-white">
+          {editingProject ? "Edit project" : "Add new project"}
         </h3>
-
-        <p className="mt-2 text-gray-400">
+        <p className="mt-0.5 text-xs text-gray-500">
           {editingProject
-            ? "Update the project information displayed on your portfolio."
+            ? "Update the project information shown on your portfolio."
             : "Add a project to your portfolio."}
         </p>
       </div>
 
-
-      {/* ========================================
-          TITLE + YEAR
-      ======================================== */}
-
-      <div className="grid gap-6 md:grid-cols-2">
-
-        {/* Title */}
-
+      {/* TITLE + YEAR */}
+      <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className="mb-2 block font-medium text-gray-300">
-            Project Title
-          </label>
-
+          <label className={labelClasses}>Project title</label>
           <input
             type="text"
             name="title"
             value={form.title}
             onChange={handleChange}
             placeholder="IT Employee Attrition Analysis"
-            className="
-              w-full
-              rounded-xl
-              border
-              border-slate-700
-              bg-slate-800
-              p-4
-              text-white
-              outline-none
-              transition
-              focus:border-blue-500
-            "
+            className={inputClasses}
           />
         </div>
 
-
-        {/* Year */}
-
         <div>
-          <label className="mb-2 block font-medium text-gray-300">
-            Year
-          </label>
-
+          <label className={labelClasses}>Year</label>
           <input
             type="text"
             name="year"
             value={form.year}
             onChange={handleChange}
             placeholder="2026"
-            className="
-              w-full
-              rounded-xl
-              border
-              border-slate-700
-              bg-slate-800
-              p-4
-              text-white
-              outline-none
-              transition
-              focus:border-blue-500
-            "
+            className={inputClasses}
           />
         </div>
-
       </div>
 
+      {/* CATEGORY / TYPE — new: lets projects be grouped and
+          filtered the same way Skills are (Web Development,
+          App Development, Data Analyst) */}
+      <div className="sm:max-w-xs">
+        <label className={labelClasses}>Project type</label>
+        <select
+          name="category"
+          value={form.category}
+          onChange={handleChange}
+          className={inputClasses}
+        >
+          <option value="web">Web Development</option>
+          <option value="app">App Development</option>
+          <option value="analytics">Data Analyst</option>
+        </select>
+      </div>
 
-      {/* ========================================
-          DESCRIPTION
-      ======================================== */}
-
+      {/* DESCRIPTION */}
       <div>
-        <label className="mb-2 block font-medium text-gray-300">
-          Description
-        </label>
-
+        <label className={labelClasses}>Description</label>
         <textarea
           name="description"
           value={form.description}
           onChange={handleChange}
           rows="4"
           placeholder="End-to-end employee attrition analytics project using Python, SQL, Excel and Power BI."
-          className="
-            w-full
-            resize-none
-            rounded-xl
-            border
-            border-slate-700
-            bg-slate-800
-            p-4
-            text-white
-            outline-none
-            transition
-            focus:border-blue-500
-          "
+          className={`${inputClasses} resize-none`}
         />
       </div>
 
-
-      {/* ========================================
-          TECHNOLOGIES
-      ======================================== */}
-
+      {/* TECHNOLOGIES */}
       <div>
-        <label className="mb-2 block font-medium text-gray-300">
-          Technologies
-        </label>
-
+        <label className={labelClasses}>Technologies</label>
         <input
           type="text"
           name="technologies"
           value={form.technologies}
           onChange={handleChange}
           placeholder="Python, SQL, Excel, Power BI"
-          className="
-            w-full
-            rounded-xl
-            border
-            border-slate-700
-            bg-slate-800
-            p-4
-            text-white
-            outline-none
-            transition
-            focus:border-blue-500
-          "
+          className={inputClasses}
         />
-
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="mt-1 text-[11px] text-gray-600">
           Separate technologies using commas.
         </p>
       </div>
 
-
-      {/* ========================================
-          GITHUB
-      ======================================== */}
-
+      {/* GITHUB */}
       <div>
-        <label className="mb-2 block font-medium text-gray-300">
-          GitHub URL
-        </label>
-
+        <label className={labelClasses}>GitHub URL</label>
         <input
           type="text"
           name="github"
           value={form.github}
           onChange={handleChange}
           placeholder="https://github.com/username/project"
-          className="
-            w-full
-            rounded-xl
-            border
-            border-slate-700
-            bg-slate-800
-            p-4
-            text-white
-            outline-none
-            transition
-            focus:border-blue-500
-          "
+          className={inputClasses}
         />
-
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="mt-1 text-[11px] text-gray-600">
           Optional. Leave empty if you don't have a GitHub link.
         </p>
       </div>
 
-
-      {/* ========================================
-          ORDER
-      ======================================== */}
-
-      <div className="max-w-md">
-
-        <label className="mb-2 block font-medium text-gray-300">
-          Display Order
-        </label>
-
+      {/* ORDER */}
+      <div className="sm:max-w-[160px]">
+        <label className={labelClasses}>Display order</label>
         <input
           type="number"
           name="order"
@@ -384,84 +265,44 @@ export default function ProjectsForm({
           onChange={handleChange}
           min="1"
           placeholder="1"
-          className="
-            w-full
-            rounded-xl
-            border
-            border-slate-700
-            bg-slate-800
-            p-4
-            text-white
-            outline-none
-            transition
-            focus:border-blue-500
-          "
+          className={inputClasses}
         />
-
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="mt-1 text-[11px] text-gray-600">
           Lower numbers appear first.
         </p>
-
       </div>
 
-
-      {/* ========================================
-          BUTTONS
-      ======================================== */}
-
-      <div className="flex flex-wrap gap-3 pt-2">
-
+      {/* BUTTONS */}
+      <div className="flex flex-col gap-2.5 border-t border-slate-800 pt-3.5 sm:flex-row-reverse">
         <button
           type="submit"
           disabled={saving}
-          className="
-            rounded-xl
-            bg-blue-600
-            px-8
-            py-3
-            font-semibold
-            text-white
-            transition
-            hover:bg-blue-700
-            disabled:cursor-not-allowed
-            disabled:opacity-60
-          "
+          className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold
+            text-white transition hover:bg-blue-500 disabled:cursor-not-allowed
+            disabled:opacity-60 sm:w-auto sm:px-6"
         >
           {saving
             ? editingProject
-              ? "Updating Project..."
-              : "Adding Project..."
+              ? "Updating..."
+              : "Adding..."
             : editingProject
-              ? "Update Project"
-              : "Add Project"}
+              ? "Update project"
+              : "Add project"}
         </button>
-
-
-        {/* CANCEL */}
 
         {editingProject && (
           <button
             type="button"
             onClick={onCancelEdit}
             disabled={saving}
-            className="
-              rounded-xl
-              border
-              border-slate-600
-              px-8
-              py-3
-              font-semibold
-              text-gray-300
-              transition
-              hover:bg-slate-800
-            "
+            className="w-full rounded-lg border border-slate-700 bg-slate-800/60 py-2.5
+              text-sm font-semibold text-gray-300 transition hover:text-white
+              disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-6"
           >
             Cancel
           </button>
         )}
-
       </div>
-
     </form>
   );
 }

@@ -1,7 +1,6 @@
 import { useState } from "react";
 
 import Layout from "../components/Layout";
-
 import CertificatesForm from "../components/CertificatesForm";
 import CertificatesList from "../components/CertificatesList";
 
@@ -16,8 +15,7 @@ export default function Certificates() {
   // EDITING CERTIFICATE
   // ========================================
 
-  const [editingCertificate, setEditingCertificate] =
-    useState(null);
+  const [editingCertificate, setEditingCertificate] = useState(null);
 
   // ========================================
   // AFTER SAVE
@@ -33,11 +31,7 @@ export default function Certificates() {
 
   function handleEditCertificate(certificate) {
     setEditingCertificate(certificate);
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   // ========================================
@@ -54,65 +48,37 @@ export default function Certificates() {
 
   return (
     <Layout title="Manage Certificates">
-
-      <div className="max-w-6xl">
-
-        {/* ========================================
-            PAGE HEADER
-        ======================================== */}
-
-        <div className="mb-8">
-
-          <p className="text-sm font-semibold uppercase tracking-[5px] text-blue-400">
-            Portfolio Management
+      <div className="max-w-6xl xl:max-w-7xl 2xl:max-w-none">
+        {/* PAGE HEADER */}
+        <div className="mb-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
+            Portfolio management
           </p>
-
-          <h2 className="mt-3 text-4xl font-black text-white">
-            Certificates Management
+          <h2 className="mt-1 text-xl font-bold text-white sm:text-2xl">
+            Certificates
           </h2>
-
-          <p className="mt-3 text-gray-400">
-            Add, edit or remove your professional
-            certificates.
+          <p className="mt-1 text-xs text-gray-500 sm:text-sm">
+            Add, edit or remove your professional certificates.
           </p>
-
         </div>
 
-        {/* ========================================
-            ADD / EDIT CERTIFICATE
-        ======================================== */}
-
-        <div
-          className="
-            mb-10
-            rounded-3xl
-            border
-            border-slate-700
-            bg-[#111827]
-            p-7
-            shadow-xl
-          "
-        >
-
+        {/* ADD / EDIT CERTIFICATE */}
+        <div className="rounded-xl border border-slate-800 bg-[#111827] p-4 sm:p-5">
           <CertificatesForm
             onCertificateSaved={handleCertificateSaved}
             editingCertificate={editingCertificate}
             onCancelEdit={handleCancelEdit}
           />
-
         </div>
 
-        {/* ========================================
-            EXISTING CERTIFICATES
-        ======================================== */}
-
-        <CertificatesList
-          refresh={refresh}
-          onEditCertificate={handleEditCertificate}
-        />
-
+        {/* EXISTING CERTIFICATES */}
+        <div className="mt-6 sm:mt-8">
+          <CertificatesList
+            refresh={refresh}
+            onEditCertificate={handleEditCertificate}
+          />
+        </div>
       </div>
-
     </Layout>
   );
 }

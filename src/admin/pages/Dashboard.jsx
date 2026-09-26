@@ -17,15 +17,20 @@ import {
   HiCode,
   HiPlusCircle,
   HiRefresh,
+  HiUser,
+  HiAcademicCap,
+  HiBadgeCheck,
+  HiDocumentDownload,
 } from "react-icons/hi";
 
 
 // Shared classes for the quick action buttons (styling only)
+// All actions now share the SAME visual weight — no single button
+// is arbitrarily "highlighted", since all 8 shortcuts are equally
+// important admin tasks. This keeps the dashboard looking balanced
+// and professional instead of drawing the eye to one random action.
 const actionBtn =
-  "flex items-center justify-center space-x-2 rounded-xl border border-slate-700/80 bg-slate-800/60 px-2 py-2.5 text-[11px] font-medium text-slate-200 transition-all hover:bg-slate-700 sm:px-4 sm:py-3 sm:text-sm 2xl:py-4";
-
-const actionBtnPrimary =
-  "flex items-center justify-center space-x-2 rounded-xl bg-blue-600 px-2 py-2.5 text-[11px] font-medium text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-500 sm:px-4 sm:py-3 sm:text-sm 2xl:py-4";
+  "flex items-center justify-center space-x-2 rounded-xl border border-slate-700/80 bg-slate-800/60 px-2 py-2.5 text-[11px] font-medium text-slate-200 transition-all hover:border-blue-500/40 hover:bg-slate-700 sm:px-4 sm:py-3 sm:text-sm 2xl:py-4";
 
 
 export default function Dashboard() {
@@ -258,6 +263,10 @@ export default function Dashboard() {
 
       {/* ==================================================
           QUICK MANAGEMENT ACTIONS
+          — 8 shortcuts, 2 per row on mobile (4 rows), 4 per
+          row from sm upward (2 rows). All buttons share the
+          same style — uniform visual weight, no single action
+          arbitrarily highlighted.
       ================================================== */}
 
       <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900/60 p-3 sm:mt-8 sm:rounded-2xl sm:p-6 2xl:p-8">
@@ -282,89 +291,9 @@ export default function Dashboard() {
         </p>
 
 
-        {/* ACTION BUTTONS — uniform-size grid from sm upward */}
+        {/* ACTION BUTTONS — uniform-size, uniform-style grid from sm upward */}
 
-        <div className="mt-3 grid grid-cols-2 gap-1.5 sm:mt-5 sm:grid-cols-3 sm:gap-3 xl:grid-cols-6 xl:gap-4">
-
-          {/* PROJECT */}
-
-          <button
-            onClick={() =>
-              navigate("/admin/projects")
-            }
-            className={actionBtnPrimary}
-          >
-
-            <span>
-              + Add New Project
-            </span>
-
-          </button>
-
-
-          {/* CERTIFICATE */}
-
-          <button
-            onClick={() =>
-              navigate("/admin/certificates")
-            }
-            className={actionBtn}
-          >
-
-            <span>
-              + Add Certificate
-            </span>
-
-          </button>
-
-
-          {/* EXPERIENCE */}
-
-          <button
-            onClick={() =>
-              navigate("/admin/experience")
-            }
-            className={actionBtn}
-          >
-
-            <span>
-              + Add Experience
-            </span>
-
-          </button>
-
-
-          {/* EDUCATION */}
-
-          <button
-            onClick={() =>
-              navigate("/admin/education")
-            }
-            className={actionBtn}
-          >
-
-            <span>
-              + Add Education
-            </span>
-
-          </button>
-
-
-          {/* SKILLS */}
-
-          <button
-            onClick={() =>
-              navigate("/admin/skills")
-            }
-            className={actionBtn}
-          >
-
-            <span>
-              Manage Skills
-            </span>
-
-          </button>
-
+        <div className="mt-3 grid grid-cols-2 gap-1.5 sm:mt-5 sm:grid-cols-4 sm:gap-3 xl:gap-4">
 
           {/* HERO */}
 
@@ -379,6 +308,132 @@ export default function Dashboard() {
 
             <span>
               Update Hero
+            </span>
+
+          </button>
+
+
+          {/* ABOUT */}
+
+          <button
+            onClick={() =>
+              navigate("/admin/about")
+            }
+            className={actionBtn}
+          >
+
+            <HiUser className="text-blue-400" />
+
+            <span>
+              Update About
+            </span>
+
+          </button>
+
+
+          {/* PROJECT */}
+
+          <button
+            onClick={() =>
+              navigate("/admin/projects")
+            }
+            className={actionBtn}
+          >
+
+            <HiBriefcase className="text-blue-400" />
+
+            <span>
+              Add New Project
+            </span>
+
+          </button>
+
+
+          {/* CERTIFICATE */}
+
+          <button
+            onClick={() =>
+              navigate("/admin/certificates")
+            }
+            className={actionBtn}
+          >
+
+            <HiBadgeCheck className="text-blue-400" />
+
+            <span>
+              Add Certificate
+            </span>
+
+          </button>
+
+
+          {/* EXPERIENCE */}
+
+          <button
+            onClick={() =>
+              navigate("/admin/experience")
+            }
+            className={actionBtn}
+          >
+
+            <HiCollection className="text-blue-400" />
+
+            <span>
+              Add Experience
+            </span>
+
+          </button>
+
+
+          {/* EDUCATION */}
+
+          <button
+            onClick={() =>
+              navigate("/admin/education")
+            }
+            className={actionBtn}
+          >
+
+            <HiAcademicCap className="text-blue-400" />
+
+            <span>
+              Add Education
+            </span>
+
+          </button>
+
+
+          {/* SKILLS */}
+
+          <button
+            onClick={() =>
+              navigate("/admin/skills")
+            }
+            className={actionBtn}
+          >
+
+            <HiCode className="text-blue-400" />
+
+            <span>
+              Manage Skills
+            </span>
+
+          </button>
+
+
+          {/* RESUME */}
+
+          <button
+            onClick={() =>
+              navigate("/admin/resume")
+            }
+            className={actionBtn}
+          >
+
+            <HiDocumentDownload className="text-blue-400" />
+
+            <span>
+              Manage Resume
             </span>
 
           </button>

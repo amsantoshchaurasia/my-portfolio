@@ -3,10 +3,10 @@ import {
   getAboutData,
   updateAboutData,
 } from "../../firebase/firestore";
-import { HiCamera } from "react-icons/hi";
+import { HiCamera, HiPencil } from "react-icons/hi";
 
 export default function AboutForm() {
-  const [form, setForm] = useState({
+  const initialForm = {
     heading: "",
     description: "",
     role: "",
@@ -14,12 +14,23 @@ export default function AboutForm() {
     location: "",
     shortBio: "",
     imageUrl: "",
-  });
+  };
+
+  const [form, setForm] = useState(initialForm);
+  const [originalForm, setOriginalForm] = useState(initialForm);
 
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Guards against the "ghost click" issue on touch devices: tapping
+  // "Edit About" swaps that exact spot for the "Save Changes" submit
+  // button, and a delayed synthetic click can land on the new button
+  // and submit the form instantly. This blocks submits for a brief
+  // window right after entering edit mode.
+  const [justEnteredEdit, setJustEnteredEdit] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -27,7 +38,7 @@ export default function AboutForm() {
         const data = await getAboutData();
 
         if (data) {
-          setForm({
+          const loadedForm = {
             heading: data.heading || "",
             description: data.description || "",
             role: data.role || "",
@@ -35,7 +46,10 @@ export default function AboutForm() {
             location: data.location || "",
             shortBio: data.shortBio || "",
             imageUrl: data.imageUrl || "",
-          });
+          };
+
+          setForm(loadedForm);
+          setOriginalForm(loadedForm);
 
           if (data.imageUrl) {
             setImagePreview(data.imageUrl);
@@ -68,7 +82,35 @@ export default function AboutForm() {
     }
   };
 
+  // ======================================================
+  // ENTER EDIT MODE
+  // ======================================================
+
+  const handleEditClick = () => {
+    setIsEditing(true);
+
+    // Swallow any ghost/delayed click that lands on the Save button
+    // right after it appears in this same spot.
+    setJustEnteredEdit(true);
+    setTimeout(() => setJustEnteredEdit(false), 400);
+  };
+
+  // ======================================================
+  // CANCEL EDIT — revert any unsaved changes
+  // ======================================================
+
+  const handleCancelEdit = () => {
+    if (saving) return;
+
+    setForm(originalForm);
+    setImageFile(null);
+    setImagePreview(originalForm.imageUrl || "");
+    setIsEditing(false);
+  };
+
   const handleSave = async () => {
+    if (saving || justEnteredEdit) return;
+
     try {
       setSaving(true);
       let updatedImageUrl = form.imageUrl;
@@ -106,7 +148,9 @@ export default function AboutForm() {
       await updateAboutData(finalData);
 
       setForm(finalData);
+      setOriginalForm(finalData);
       setImageFile(null);
+      setIsEditing(false);
 
       alert("About section updated successfully.");
     } catch (error) {
@@ -154,6 +198,9 @@ export default function AboutForm() {
     focus:border-blue-500
     focus:ring-2
     focus:ring-blue-500/20
+    disabled:cursor-not-allowed
+    disabled:opacity-60
+    disabled:bg-slate-900/40
     sm:px-4
     sm:py-3
     sm:text-base
@@ -174,10 +221,6 @@ export default function AboutForm() {
       ================================================== */}
 
       <div className="text-center lg:text-left">
-        <label className="block mb-2 text-xs font-medium text-gray-300 sm:mb-3 sm:text-sm xl:text-base 2xl:text-lg">
-          Profile Photo
-        </label>
-
         <div className="flex flex-col items-center gap-2 sm:gap-3 lg:flex-row lg:items-center lg:gap-6 xl:gap-8 2xl:gap-10">
 
           <div className="relative w-20 h-20 shrink-0 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-24 lg:h-24 xl:w-32 xl:h-32 2xl:w-36 2xl:h-36">
@@ -212,8 +255,8 @@ export default function AboutForm() {
             />
           </div>
 
-          <p className="text-[11px] text-slate-500 sm:text-xs md:text-sm xl:text-base 2xl:text-lg">
-            Tap the camera icon to change photo
+          <p className="text-xs font-semibold text-white sm:text-sm md:text-base xl:text-lg 2xl:text-xl">
+            Profile Photo
           </p>
 
         </div>
@@ -234,6 +277,7 @@ export default function AboutForm() {
           value={form.heading}
           onChange={handleChange}
           placeholder="About Me"
+          disabled={!isEditing}
           className={inputClass}
         />
       </div>
@@ -253,6 +297,7 @@ export default function AboutForm() {
           onChange={handleChange}
           rows={5}
           placeholder="Write your About description..."
+          disabled={!isEditing}
           className={`${inputClass} resize-y`}
         />
       </div>
@@ -274,6 +319,7 @@ export default function AboutForm() {
             value={form.role}
             onChange={handleChange}
             placeholder="Data Analyst"
+            disabled={!isEditing}
             className={inputClass}
           />
         </div>
@@ -289,6 +335,7 @@ export default function AboutForm() {
             value={form.experience}
             onChange={handleChange}
             placeholder="Data Analytics & IT Experience"
+            disabled={!isEditing}
             className={inputClass}
           />
         </div>
@@ -310,6 +357,7 @@ export default function AboutForm() {
           value={form.location}
           onChange={handleChange}
           placeholder="Mumbai, Maharashtra"
+          disabled={!isEditing}
           className={inputClass}
         />
       </div>
@@ -329,57 +377,136 @@ export default function AboutForm() {
           onChange={handleChange}
           rows={4}
           placeholder="BSc IT Graduate | MSc Data Science"
+          disabled={!isEditing}
           className={`${inputClass} resize-y`}
         />
       </div>
 
       {/* ==================================================
-          SAVE BUTTON
-          — centered on mobile & tablet (base/sm/md), left-
-          aligned from lg (Laptop) up
+          SAVE/CANCEL — only in edit mode; EDIT — only outside it.
+          Same position for both, matching the Hero Section pattern.
       ================================================== */}
 
-      <div className="pt-4 border-t border-slate-700 flex justify-center sm:pt-5 md:pt-6 lg:justify-start lg:pt-7 xl:pt-8 2xl:pt-9">
+      {isEditing ? (
+        <div className="pt-4 border-t border-slate-700 flex flex-col gap-2.5 sm:flex-row-reverse sm:justify-center sm:pt-5 md:pt-6 lg:justify-start lg:pt-7 xl:pt-8 2xl:pt-9">
 
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className="
-            w-full
-            rounded-xl
-            bg-blue-600
-            px-5
-            py-2.5
-            text-sm
-            font-semibold
-            text-white
-            transition-all
-            hover:bg-blue-500
-            hover:shadow-lg
-            hover:shadow-blue-600/20
-            disabled:cursor-not-allowed
-            disabled:opacity-50
-            sm:w-auto
-            sm:min-w-[200px]
-            sm:px-6
-            sm:py-3
-            sm:text-base
-            md:min-w-[220px]
-            xl:min-w-[240px]
-            xl:px-7
-            xl:py-3.5
-            xl:text-base
-            2xl:min-w-[260px]
-            2xl:px-8
-            2xl:py-4
-            2xl:text-lg
-          "
-        >
-          {saving ? "Saving..." : "Save Changes"}
-        </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || justEnteredEdit}
+            className="
+              w-full
+              rounded-xl
+              bg-blue-600
+              px-5
+              py-2.5
+              text-sm
+              font-semibold
+              text-white
+              transition-all
+              hover:bg-blue-500
+              hover:shadow-lg
+              hover:shadow-blue-600/20
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+              sm:w-auto
+              sm:min-w-[200px]
+              sm:px-6
+              sm:py-3
+              sm:text-base
+              md:min-w-[220px]
+              xl:min-w-[240px]
+              xl:px-7
+              xl:py-3.5
+              xl:text-base
+              2xl:min-w-[260px]
+              2xl:px-8
+              2xl:py-4
+              2xl:text-lg
+            "
+          >
+            {saving ? "Saving..." : "Save Changes"}
+          </button>
 
-      </div>
+          <button
+            type="button"
+            onClick={handleCancelEdit}
+            disabled={saving}
+            className="
+              w-full
+              rounded-xl
+              border
+              border-slate-700
+              bg-slate-800/60
+              px-5
+              py-2.5
+              text-sm
+              font-semibold
+              text-gray-300
+              transition
+              hover:text-white
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+              sm:w-auto
+              sm:px-6
+              sm:py-3
+              sm:text-base
+              xl:px-7
+              xl:py-3.5
+              2xl:px-8
+              2xl:py-4
+              2xl:text-lg
+            "
+          >
+            Cancel
+          </button>
+
+        </div>
+      ) : (
+        <div className="pt-4 border-t border-slate-700 flex justify-center sm:pt-5 md:pt-6 lg:justify-start lg:pt-7 xl:pt-8 2xl:pt-9">
+
+          <button
+            type="button"
+            onClick={handleEditClick}
+            className="
+              w-full
+              flex
+              items-center
+              justify-center
+              gap-2
+              rounded-xl
+              bg-blue-600
+              px-5
+              py-2.5
+              text-sm
+              font-semibold
+              text-white
+              transition-all
+              hover:bg-blue-500
+              hover:shadow-lg
+              hover:shadow-blue-600/20
+              sm:w-auto
+              sm:min-w-[200px]
+              sm:px-6
+              sm:py-3
+              sm:text-base
+              md:min-w-[220px]
+              xl:min-w-[240px]
+              xl:px-7
+              xl:py-3.5
+              xl:text-base
+              2xl:min-w-[260px]
+              2xl:px-8
+              2xl:py-4
+              2xl:text-lg
+            "
+          >
+            <HiPencil className="text-base" />
+            Edit About
+          </button>
+
+        </div>
+      )}
 
     </div>
   );

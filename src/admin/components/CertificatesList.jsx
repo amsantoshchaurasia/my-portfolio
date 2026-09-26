@@ -1,13 +1,7 @@
 import { useEffect, useState } from "react";
 
-import {
-  getCertificates,
-  deleteCertificate,
-} from "../../firebase/firestore";
-
-import {
-  deleteCertificateFile,
-} from "../../firebase/storage";
+import { getCertificates, deleteCertificate } from "../../firebase/firestore";
+import { deleteCertificateFile } from "../../firebase/storage";
 
 // Accepts an array or a comma-separated string, returns a clean array.
 function getTags(raw) {
@@ -19,19 +13,46 @@ function getTags(raw) {
 }
 
 // ======================================================
+// TAG COLORS — every distinct tag text always gets the
+// same color (e.g. "SQL" is always cyan, "Web Development"
+// is always yellow), picked deterministically from a palette.
+// ======================================================
+
+const TAG_COLOR_PALETTE = [
+  { bg: "bg-purple-500/10", text: "text-purple-400" },
+  { bg: "bg-yellow-500/10", text: "text-yellow-400" },
+  { bg: "bg-green-500/10", text: "text-green-400" },
+  { bg: "bg-pink-500/10", text: "text-pink-400" },
+  { bg: "bg-orange-500/10", text: "text-orange-400" },
+  { bg: "bg-cyan-500/10", text: "text-cyan-400" },
+  { bg: "bg-indigo-500/10", text: "text-indigo-400" },
+  { bg: "bg-teal-500/10", text: "text-teal-400" },
+  { bg: "bg-rose-500/10", text: "text-rose-400" },
+  { bg: "bg-lime-500/10", text: "text-lime-400" },
+];
+
+function hashTag(tag) {
+  let hash = 0;
+  for (let i = 0; i < tag.length; i++) {
+    hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function getTagColors(tag) {
+  const index = hashTag(tag.trim().toLowerCase()) % TAG_COLOR_PALETTE.length;
+  return TAG_COLOR_PALETTE[index];
+}
+
+// ======================================================
 // COMPONENT
 // ======================================================
 
-export default function CertificatesList({
-  refresh,
-  onEditCertificate,
-}) {
+export default function CertificatesList({ refresh, onEditCertificate }) {
   const [certificates, setCertificates] = useState([]);
-
   const [loading, setLoading] = useState(true);
-
   const [deletingId, setDeletingId] = useState(null);
-
   const [error, setError] = useState("");
 
   // ======================================================
@@ -44,22 +65,10 @@ export default function CertificatesList({
       setError("");
 
       const data = await getCertificates();
-
-      // console.log(
-      //   "Certificates loaded from Firestore:",
-      //   data
-      // );
-
       setCertificates(data);
     } catch (error) {
-      console.error(
-        "Error loading certificates:",
-        error
-      );
-
-      setError(
-        "Unable to load certificates. Please try again."
-      );
+      console.error("Error loading certificates:", error);
+      setError("Unable to load certificates. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -94,21 +103,13 @@ export default function CertificatesList({
       setDeletingId(certificate.id);
       setError("");
 
-      // ==================================================
       // DELETE FIRESTORE DOCUMENT FIRST
-      // ==================================================
-
       await deleteCertificate(certificate.id);
 
-      // ==================================================
       // DELETE STORAGE PDF
-      // ==================================================
-
       if (certificate.storagePath) {
         try {
-          await deleteCertificateFile(
-            certificate.storagePath
-          );
+          await deleteCertificateFile(certificate.storagePath);
         } catch (storageError) {
           console.warn(
             "Certificate deleted from Firestore, but PDF could not be deleted from Storage:",
@@ -117,30 +118,13 @@ export default function CertificatesList({
         }
       }
 
-      // ==================================================
       // REMOVE FROM LOCAL STATE
-      // ==================================================
+      setCertificates((prev) => prev.filter((item) => item.id !== certificate.id));
 
-      setCertificates((prev) =>
-        prev.filter(
-          (item) =>
-            item.id !== certificate.id
-        )
-      );
-
-      alert(
-        "Certificate deleted successfully."
-      );
+      alert("Certificate deleted successfully.");
     } catch (error) {
-      console.error(
-        "Error deleting certificate:",
-        error
-      );
-
-      setError(
-        error?.message ||
-          "Failed to delete certificate."
-      );
+      console.error("Error deleting certificate:", error);
+      setError(error?.message || "Failed to delete certificate.");
     } finally {
       setDeletingId(null);
     }
@@ -152,24 +136,9 @@ export default function CertificatesList({
 
   if (loading) {
     return (
-      <div className="mt-10">
-        <div
-          className="
-            rounded-3xl
-            border
-            border-slate-700
-            bg-[#111827]
-            p-7
-          "
-        >
-          <div className="animate-pulse">
-            <div className="h-4 w-40 rounded bg-slate-700" />
-
-            <div className="mt-4 h-8 w-64 rounded bg-slate-700" />
-
-            <div className="mt-3 h-4 w-80 rounded bg-slate-800" />
-          </div>
-        </div>
+      <div className="mt-5 rounded-xl border border-slate-800 bg-[#111827] p-8 text-center">
+        <div className="mx-auto h-7 w-7 animate-spin rounded-full border-[3px] border-slate-700 border-t-blue-500" />
+        <p className="mt-2.5 text-xs text-gray-500">Loading certificates...</p>
       </div>
     );
   }
@@ -179,452 +148,142 @@ export default function CertificatesList({
   // ======================================================
 
   return (
-    <div className="mt-10">
-
-      {/* ==================================================
-          HEADER
-      ================================================== */}
-
-      <div className="mb-6">
-
-        <p className="text-sm font-semibold uppercase tracking-[5px] text-blue-400">
-          Portfolio
-        </p>
-
-        <div className="mt-2 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-
-          <div>
-            <h3 className="text-3xl font-black text-white">
-              Existing Certificates
-            </h3>
-
-            <p className="mt-2 text-gray-400">
-              Manage certificates currently displayed
-              on your portfolio.
-            </p>
-          </div>
-
-          {/* COUNT */}
-
-          <div
-            className="
-              w-fit
-              rounded-full
-              border
-              border-blue-500/20
-              bg-blue-500/10
-              px-4
-              py-2
-              text-sm
-              font-semibold
-              text-blue-400
-            "
-          >
-            {certificates.length}{" "}
-            {certificates.length === 1
-              ? "Certificate"
-              : "Certificates"}
-          </div>
-
+    <div className="mt-5">
+      {/* HEADER */}
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold text-white">
+            Existing certificates
+          </h3>
+          <p className="mt-0.5 truncate text-xs text-gray-500">
+            Manage certificates shown on your portfolio.
+          </p>
         </div>
+
+        <span className="shrink-0 rounded-full border border-slate-700 bg-slate-800/60 px-2.5 py-1 text-xs font-medium text-gray-300">
+          {certificates.length}
+        </span>
       </div>
 
-      {/* ==================================================
-          ERROR
-      ================================================== */}
-
+      {/* ERROR */}
       {error && (
-        <div
-          className="
-            mb-6
-            rounded-xl
-            border
-            border-red-500/30
-            bg-red-500/10
-            px-4
-            py-3
-            text-sm
-            text-red-400
-          "
-        >
+        <div className="mb-3 rounded-lg border border-red-500/25 bg-red-500/10 px-3.5 py-2.5 text-xs text-red-400">
           {error}
         </div>
       )}
 
-      {/* ==================================================
-          EMPTY STATE
-      ================================================== */}
-
+      {/* EMPTY STATE */}
       {certificates.length === 0 ? (
-
-        <div
-          className="
-            rounded-3xl
-            border
-            border-slate-700
-            bg-[#111827]
-            p-8
-            text-center
-          "
-        >
-
-          <div
-            className="
-              mx-auto
-              flex
-              h-16
-              w-16
-              items-center
-              justify-center
-              rounded-2xl
-              bg-blue-500/10
-              text-2xl
-            "
-          >
-            📜
+        <div className="rounded-xl border border-slate-800 bg-[#111827] p-8 text-center">
+          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-base text-blue-400">
+            +
           </div>
-
-          <h4 className="mt-5 text-xl font-bold text-white">
-            No certificates found
+          <h4 className="mt-3 text-sm font-semibold text-white">
+            No certificates yet
           </h4>
-
-          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-500">
-            Add your first certificate using the
-            upload form above. The certificate PDF
-            will automatically be stored in Firebase
-            Storage.
+          <p className="mt-1 text-xs text-gray-500">
+            Add your first certificate using the form above.
           </p>
-
         </div>
-
       ) : (
+        /* CERTIFICATE LIST — slim cards (Skills-style) */
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {certificates.map((certificate) => {
+            const isDeleting = deletingId === certificate.id;
+            const tags = getTags(certificate.tags);
 
-        /* ==================================================
-           CERTIFICATE LIST
-        ================================================== */
+            return (
+              <div
+                key={certificate.id}
+                className="flex flex-col rounded-lg border border-slate-800 bg-[#111827] p-3.5 transition hover:border-slate-700"
+              >
+                {/* TITLE */}
+                <p className="truncate text-sm font-semibold text-white">
+                  {certificate.title}
+                </p>
 
-        <div className="grid gap-5">
-
-          {certificates.map(
-            (certificate) => {
-
-              const isDeleting =
-                deletingId === certificate.id;
-
-              const certificateUrl =
-                certificate?.fileUrl ||
-                certificate?.pdf ||
-                null;
-
-              const tags = getTags(certificate.tags);
-
-              return (
-                <div
-                  key={certificate.id}
-                  className="
-                    rounded-2xl
-                    border
-                    border-slate-700
-                    bg-[#111827]
-                    p-6
-                    transition-all
-                    duration-300
-                    hover:border-blue-500/50
-                    hover:shadow-lg
-                    hover:shadow-blue-500/5
-                  "
-                >
-
-                  {/* ==================================================
-                      MAIN CONTENT
-                  ================================================== */}
-
-                  <div
-                    className="
-                      flex
-                      flex-col
-                      justify-between
-                      gap-6
-                      md:flex-row
-                    "
-                  >
-
-                    {/* ==================================================
-                        INFORMATION
-                    ================================================== */}
-
-                    <div className="min-w-0 flex-1">
-
-                      {/* TITLE / YEAR / TYPE */}
-
-                      <div className="flex flex-wrap items-center gap-3">
-
-                        <h4 className="text-xl font-bold text-white">
-                          {certificate.title}
-                        </h4>
-
-                        {/* YEAR */}
-
-                        {certificate.year && (
-                          <span
-                            className="
-                              rounded-full
-                              bg-blue-500/10
-                              px-3
-                              py-1
-                              text-sm
-                              font-medium
-                              text-blue-400
-                            "
-                          >
-                            {certificate.year}
-                          </span>
-                        )}
-
-                        {/* TYPE */}
-
-                        <span
-                          className={`rounded-full px-3 py-1 text-sm font-medium ${
-                            certificate.type ===
-                            "other"
-                              ? "bg-purple-500/10 text-purple-400"
-                              : "bg-green-500/10 text-green-400"
-                          }`}
-                        >
-                          {certificate.type ===
-                          "other"
-                            ? "Other"
-                            : "Featured"}
-                        </span>
-
-                      </div>
-
-                      {/* COMPANY */}
-
-                      {certificate.company && (
-                        <p className="mt-2 text-sm font-medium text-blue-400">
-                          {certificate.company}
-                        </p>
-                      )}
-
-                      {/* TAGS */}
-
-                      {tags.length > 0 ? (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {tags.map((tag) => (
-                            <span
-                              key={tag}
-                              className="
-                                rounded-md
-                                border
-                                border-slate-700
-                                bg-slate-800/60
-                                px-2.5
-                                py-0.5
-                                text-xs
-                                font-medium
-                                text-gray-300
-                              "
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="mt-3 text-xs text-gray-600">
-                          No tags added
-                        </p>
-                      )}
-
-                      {/* DESCRIPTION (disabled)
-                      {certificate.description && (
-                        <p className="mt-3 max-w-3xl leading-7 text-gray-400">
-                          {certificate.description}
-                        </p>
-                      )}
-                      */}
-
-                      {/* ==================================================
-                          PDF INFORMATION
-                      ================================================== */}
-
-                      <div className="mt-5">
-
-                        {certificate.fileName ? (
-                          <div
-                            className="
-                              inline-flex
-                              max-w-full
-                              items-center
-                              gap-2
-                              rounded-xl
-                              border
-                              border-slate-700
-                              bg-slate-950/60
-                              px-4
-                              py-2.5
-                            "
-                          >
-                            <span className="text-red-400">
-                              PDF
-                            </span>
-
-                            <span className="max-w-[280px] truncate text-sm text-gray-400">
-                              {certificate.fileName}
-                            </span>
-                          </div>
-                        ) : /* LEGACY PDF badge (disabled)
-                        certificate.pdf ? (
-                          <div
-                            className="
-                              inline-flex
-                              items-center
-                              gap-2
-                              rounded-xl
-                              border
-                              border-yellow-500/20
-                              bg-yellow-500/5
-                              px-4
-                              py-2.5
-                            "
-                          >
-                            <span className="text-sm text-yellow-400">
-                              Legacy PDF
-                            </span>
-                          </div>
-                        ) : */ !certificateUrl ? (
-                          <div
-                            className="
-                              inline-flex
-                              items-center
-                              rounded-xl
-                              border
-                              border-red-500/20
-                              bg-red-500/5
-                              px-4
-                              py-2.5
-                              text-sm
-                              text-red-400
-                            "
-                          >
-                            PDF unavailable
-                          </div>
-                        ) : null}
-
-                      </div>
-
-                    </div>
-
-                    {/* ==================================================
-                        ORDER
-                    ================================================== */}
-
-                    <div className="shrink-0">
-
-                      <span className="text-sm text-gray-500">
-                        Order:{" "}
-                        {certificate.order || 1}
+                {/* COMPANY + YEAR (left, grouped) — ICON ACTIONS (right) — same row */}
+                <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                    {certificate.company && (
+                      <span className="shrink-0 truncate rounded-full bg-blue-500/10 px-2 py-0.5 text-[11px] font-semibold text-blue-400">
+                        {certificate.company}
                       </span>
-
-                    </div>
-
-                  </div>
-
-                  {/* ==================================================
-                      ACTIONS
-                  ================================================== */}
-
-                  <div className="mt-6 flex flex-wrap gap-3 border-t border-slate-800 pt-5">
-
-                    {/* VIEW */}
-
-                    {certificateUrl && (
-                      <a
-                        href={certificateUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="
-                          rounded-xl
-                          bg-blue-600
-                          px-5
-                          py-2.5
-                          font-semibold
-                          text-white
-                          transition
-                          hover:bg-blue-700
-                        "
-                      >
-                        View Certificate
-                      </a>
                     )}
 
-                    {/* EDIT */}
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onEditCertificate?.(
-                          certificate
-                        )
-                      }
-                      disabled={isDeleting}
-                      className="
-                        rounded-xl
-                        border
-                        border-blue-500/40
-                        px-5
-                        py-2.5
-                        font-semibold
-                        text-blue-400
-                        transition
-                        hover:bg-blue-500/10
-                        disabled:cursor-not-allowed
-                        disabled:opacity-50
-                      "
-                    >
-                      Edit
-                    </button>
-
-                    {/* DELETE */}
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleDelete(
-                          certificate
-                        )
-                      }
-                      disabled={isDeleting}
-                      className="
-                        rounded-xl
-                        border
-                        border-red-500/40
-                        px-5
-                        py-2.5
-                        font-semibold
-                        text-red-400
-                        transition
-                        hover:bg-red-500/10
-                        disabled:cursor-not-allowed
-                        disabled:opacity-50
-                      "
-                    >
-                      {isDeleting
-                        ? "Deleting..."
-                        : "Delete"}
-                    </button>
-
+                    {certificate.year && (
+                      <span className="shrink-0 rounded-full bg-slate-700/40 px-2 py-0.5 text-[11px] font-semibold text-gray-300">
+                        {certificate.year}
+                      </span>
+                    )}
                   </div>
 
+                  <div className="flex shrink-0 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => onEditCertificate?.(certificate)}
+                      disabled={isDeleting}
+                      aria-label={`Edit ${certificate.title || "certificate"}`}
+                      className="flex h-7 w-7 items-center justify-center rounded-full border border-blue-500/25
+                        bg-blue-500/10 text-blue-400 transition hover:bg-blue-500/20
+                        disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-none stroke-current stroke-2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 20h9" />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"
+                        />
+                      </svg>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(certificate)}
+                      disabled={isDeleting}
+                      aria-label={`Delete ${certificate.title || "certificate"}`}
+                      className="flex h-7 w-7 items-center justify-center rounded-full border border-red-500/25
+                        bg-red-500/10 text-red-400 transition hover:bg-red-500/20
+                        disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {isDeleting ? (
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 animate-spin fill-none stroke-current stroke-2">
+                          <path strokeLinecap="round" d="M12 3a9 9 0 1 0 9 9" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-none stroke-current stroke-2">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
+                          />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
-              );
-            }
-          )}
 
+                {/* SKILL TAGS — each tag gets its own consistent color; space reserved so every card is the same height */}
+                <div className="mt-2 flex min-h-[24px] flex-wrap items-start gap-1.5">
+                  {tags.map((tag) => {
+                    const colors = getTagColors(tag);
+                    return (
+                      <span
+                        key={tag}
+                        className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${colors.bg} ${colors.text}`}
+                      >
+                        {tag}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
-
       )}
-
     </div>
   );
 }

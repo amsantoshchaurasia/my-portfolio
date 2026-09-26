@@ -6,11 +6,44 @@ import { FiMapPin } from "react-icons/fi";
 
 import Container from "../common/Container";
 import SocialIcons from "../common/SocialIcons";
+import { getHeroData } from "../../firebase/firestore";
 
 export default function Footer() {
   const year = new Date().getFullYear();
 
   const [showButton, setShowButton] = useState(false);
+
+  // ======================================================
+  // SOCIAL LINKS — SocialIcons needs a `data` prop with the
+  // github/linkedin/email/instagram/facebook links. Without
+  // fetching and passing this, every icon stays hidden since
+  // they're all undefined by default — this was why the icons
+  // were missing from the footer.
+  // ======================================================
+
+  const [socialData, setSocialData] = useState({});
+
+  useEffect(() => {
+    async function loadSocialData() {
+      try {
+        const data = await getHeroData();
+
+        if (data) {
+          setSocialData({
+            github: data.github,
+            linkedin: data.linkedin,
+            email: data.email,
+            instagram: data.instagram,
+            facebook: data.facebook,
+          });
+        }
+      } catch (error) {
+        console.error("Error loading social links in Footer:", error);
+      }
+    }
+
+    loadSocialData();
+  }, []);
 
   // ======================================================
   // SHOW / HIDE BACK TO TOP BUTTON
@@ -81,9 +114,15 @@ export default function Footer() {
                   Python, SQL, Excel and Power BI.
                 </p>
 
-                {/* LOCATION */}
+                {/* LOCATION — clickable, opens Google Maps in a new tab */}
 
-                <div className="flex items-center gap-2 sm:gap-2.5 pt-1.5 sm:pt-2">
+                <a
+                  href="https://www.google.com/maps/search/?api=1&query=Navi+Mumbai%2C+India"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Open Navi Mumbai, India on Google Maps"
+                  className="group flex w-fit items-center gap-2 sm:gap-2.5 pt-1.5 sm:pt-2"
+                >
 
                   <div
                     className="
@@ -100,16 +139,19 @@ export default function Footer() {
                       border-blue-500/20
                       bg-blue-500/10
                       text-blue-400
+                      transition-colors
+                      group-hover:border-blue-500/50
+                      group-hover:bg-blue-500/20
                     "
                   >
                     <FiMapPin size={16} />
                   </div>
 
-                  <span className="text-xs sm:text-sm font-medium text-gray-300">
+                  <span className="text-xs sm:text-sm font-medium text-gray-300 transition-colors group-hover:text-blue-400">
                     Navi Mumbai, India
                   </span>
 
-                </div>
+                </a>
 
               </div>
 
@@ -173,6 +215,24 @@ export default function Footer() {
 
                   <li>
                     <a
+                      href="#education"
+                      className="transition-colors hover:text-blue-400"
+                    >
+                      Education
+                    </a>
+                  </li>
+
+                  <li>
+                    <a
+                      href="#certificates"
+                      className="transition-colors hover:text-blue-400"
+                    >
+                      Certificates
+                    </a>
+                  </li>
+
+                  <li>
+                    <a
                       href="#contact"
                       className="transition-colors hover:text-blue-400"
                     >
@@ -217,7 +277,7 @@ export default function Footer() {
 
                   {/* GITHUB + LINKEDIN + EMAIL + INSTAGRAM + FACEBOOK */}
 
-                  <SocialIcons />
+                  <SocialIcons data={socialData} />
 
                 </div>
 

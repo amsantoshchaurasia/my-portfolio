@@ -90,10 +90,13 @@ export default function AboutStats() {
     return () => clearInterval(interval);
   }, []);
 
+  // CGPA title clarifies it's for the BSc IT degree, not the
+  // ongoing M.Sc. — avoids ambiguity now that both are mentioned
+  // in the About description above.
   const statsList = [
     { number: stats.projects, title: "Projects" },
     { number: stats.certificates, title: "Certificates" },
-    { number: stats.cgpa, title: "CGPA" },
+    { number: stats.cgpa, title: "CGPA (BSc IT)" },
     { number: experience, title: "Experience" },
   ];
 

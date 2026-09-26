@@ -4,7 +4,7 @@ import {
   updateHeroData,
 } from "../../firebase/firestore";
 import { uploadPhotoFile } from "../../firebase/storage";
-import { HiCamera } from "react-icons/hi";
+import { HiCamera, HiPencil } from "react-icons/hi";
 
 export default function HeroForm() {
   // ======================================================
@@ -31,11 +31,21 @@ export default function HeroForm() {
   // ======================================================
 
   const [form, setForm] = useState(initialForm);
+  const [originalForm, setOriginalForm] = useState(initialForm);
+
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Guards against the "ghost click" issue on touch devices: tapping
+  // "Edit Hero" swaps that exact spot for the "Save Changes" submit
+  // button, and a delayed synthetic click can land on the new button
+  // and submit the form instantly. This blocks submits for a brief
+  // window right after entering edit mode.
+  const [justEnteredEdit, setJustEnteredEdit] = useState(false);
 
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
@@ -53,10 +63,14 @@ export default function HeroForm() {
         const data = await getHeroData();
 
         if (data) {
-          setForm({
+          const loadedForm = {
             ...initialForm,
             ...data,
-          });
+          };
+
+          setForm(loadedForm);
+          setOriginalForm(loadedForm);
+
           if (data.imageUrl) {
             setImagePreview(data.imageUrl);
           }
@@ -105,13 +119,43 @@ export default function HeroForm() {
   };
 
   // ======================================================
+  // ENTER EDIT MODE
+  // ======================================================
+
+  const handleEditClick = () => {
+    setIsEditing(true);
+    setSuccess("");
+    setError("");
+
+    // Swallow any ghost/delayed click that lands on the Save button
+    // right after it appears in this same spot.
+    setJustEnteredEdit(true);
+    setTimeout(() => setJustEnteredEdit(false), 400);
+  };
+
+  // ======================================================
+  // CANCEL EDIT — revert any unsaved changes
+  // ======================================================
+
+  const handleCancelEdit = () => {
+    if (saving) return;
+
+    setForm(originalForm);
+    setImageFile(null);
+    setImagePreview(originalForm.imageUrl || "");
+    setIsEditing(false);
+    setSuccess("");
+    setError("");
+  };
+
+  // ======================================================
   // SAVE HERO DATA
   // ======================================================
 
   const handleSave = async (e) => {
     e.preventDefault();
 
-    if (saving) return;
+    if (saving || justEnteredEdit) return;
 
     try {
       setSaving(true);
@@ -133,7 +177,9 @@ export default function HeroForm() {
 
       await updateHeroData(finalData);
       setForm(finalData);
+      setOriginalForm(finalData);
       setImageFile(null);
+      setIsEditing(false);
 
       setSuccess(
         "Hero section updated successfully."
@@ -186,6 +232,9 @@ export default function HeroForm() {
     focus:border-blue-500
     focus:ring-2
     focus:ring-blue-500/20
+    disabled:cursor-not-allowed
+    disabled:opacity-60
+    disabled:bg-slate-900/40
     sm:px-4
     sm:py-3
     sm:text-base
@@ -209,15 +258,6 @@ export default function HeroForm() {
           PROFILE PHOTO SECTION
       ================================================== */}
 
-      <div className="text-center sm:text-left">
-        <h3 className="text-base font-bold text-white sm:text-lg md:text-xl xl:text-2xl">
-          Hero Profile Photo
-        </h3>
-
-        <p className="mt-1 text-xs text-gray-400 sm:text-sm xl:text-base 2xl:text-lg">
-          Upload or update your profile picture displayed on the homepage.
-        </p>
-      </div>
 
       <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:gap-6 sm:text-left md:gap-8 lg:gap-10 xl:gap-12 2xl:gap-14">
 
@@ -258,9 +298,6 @@ export default function HeroForm() {
           <p className="text-xs font-semibold text-white sm:text-sm md:text-base xl:text-lg 2xl:text-xl">
             Profile Photo
           </p>
-          <p className="mt-1 text-[11px] text-slate-500 sm:text-xs md:text-sm xl:text-base 2xl:text-lg">
-            Tap the camera icon to change. Recommended: square image (PNG, JPG).
-          </p>
         </div>
 
       </div>
@@ -298,6 +335,7 @@ export default function HeroForm() {
             value={form.firstName}
             onChange={handleChange}
             placeholder="Enter first name"
+            disabled={!isEditing}
             className={inputClass}
           />
         </div>
@@ -313,6 +351,7 @@ export default function HeroForm() {
             value={form.lastName}
             onChange={handleChange}
             placeholder="Enter last name"
+            disabled={!isEditing}
             className={inputClass}
           />
         </div>
@@ -330,6 +369,7 @@ export default function HeroForm() {
             value={form.title}
             onChange={handleChange}
             placeholder="e.g. Data Analyst"
+            disabled={!isEditing}
             className={inputClass}
           />
         </div>
@@ -352,6 +392,7 @@ export default function HeroForm() {
           value={form.title}
           onChange={handleChange}
           placeholder="e.g. Data Analyst"
+          disabled={!isEditing}
           className={inputClass}
         />
       </div>
@@ -371,6 +412,7 @@ export default function HeroForm() {
           onChange={handleChange}
           placeholder="Write a short professional introduction..."
           rows={5}
+          disabled={!isEditing}
           className={`${inputClass} resize-y sm:rows-6 2xl:rows-5`}
         />
 
@@ -413,6 +455,7 @@ export default function HeroForm() {
             value={form.email}
             onChange={handleChange}
             placeholder="Enter email address"
+            disabled={!isEditing}
             className={inputClass}
           />
         </div>
@@ -451,6 +494,7 @@ export default function HeroForm() {
             value={form.location}
             onChange={handleChange}
             placeholder="e.g. Maharashtra, India"
+            disabled={!isEditing}
             className={inputClass}
           />
         </div>
@@ -492,6 +536,7 @@ export default function HeroForm() {
             value={form.github}
             onChange={handleChange}
             placeholder="https://github.com/username"
+            disabled={!isEditing}
             className={inputClass}
           />
         </div>
@@ -509,6 +554,7 @@ export default function HeroForm() {
             value={form.linkedin}
             onChange={handleChange}
             placeholder="https://linkedin.com/in/username"
+            disabled={!isEditing}
             className={inputClass}
           />
         </div>
@@ -526,6 +572,7 @@ export default function HeroForm() {
             value={form.instagram}
             onChange={handleChange}
             placeholder="https://instagram.com/username"
+            disabled={!isEditing}
             className={inputClass}
           />
         </div>
@@ -543,6 +590,7 @@ export default function HeroForm() {
             value={form.facebook}
             onChange={handleChange}
             placeholder="https://facebook.com/username"
+            disabled={!isEditing}
             className={inputClass}
           />
         </div>
@@ -570,48 +618,125 @@ export default function HeroForm() {
       )}
 
       {/* ==================================================
-          SAVE BUTTON
+          SAVE / CANCEL BUTTONS — only shown while editing
           — left-aligned everywhere, centered only at md (tablet)
       ================================================== */}
 
-      <div className="pt-5 border-t border-slate-700 flex justify-start sm:pt-6 md:justify-center lg:justify-start xl:pt-7 2xl:pt-8">
+      {isEditing ? (
+        <div className="pt-5 border-t border-slate-700 flex flex-col gap-2.5 sm:flex-row-reverse sm:justify-start sm:pt-6 md:justify-center lg:justify-start xl:pt-7 2xl:pt-8">
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="
-            w-full
-            rounded-xl
-            bg-blue-600
-            px-5
-            py-2.5
-            text-sm
-            text-white
-            font-semibold
-            transition-all
-            hover:bg-blue-500
-            hover:shadow-lg
-            hover:shadow-blue-600/20
-            disabled:cursor-not-allowed
-            disabled:opacity-50
-            sm:w-auto
-            sm:min-w-[200px]
-            sm:px-6
-            sm:py-3
-            sm:text-base
-            xl:min-w-[220px]
-            xl:px-7
-            xl:py-3.5
-            2xl:min-w-[240px]
-            2xl:px-8
-            2xl:py-4
-            2xl:text-lg
-          "
-        >
-          {saving ? "Saving..." : "Save Changes"}
-        </button>
+          <button
+            type="submit"
+            disabled={saving || justEnteredEdit}
+            className="
+              w-full
+              rounded-xl
+              bg-blue-600
+              px-5
+              py-2.5
+              text-sm
+              text-white
+              font-semibold
+              transition-all
+              hover:bg-blue-500
+              hover:shadow-lg
+              hover:shadow-blue-600/20
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+              sm:w-auto
+              sm:min-w-[200px]
+              sm:px-6
+              sm:py-3
+              sm:text-base
+              xl:min-w-[220px]
+              xl:px-7
+              xl:py-3.5
+              2xl:min-w-[240px]
+              2xl:px-8
+              2xl:py-4
+              2xl:text-lg
+            "
+          >
+            {saving ? "Saving..." : "Save Changes"}
+          </button>
 
-      </div>
+          <button
+            type="button"
+            onClick={handleCancelEdit}
+            disabled={saving}
+            className="
+              w-full
+              rounded-xl
+              border
+              border-slate-700
+              bg-slate-800/60
+              px-5
+              py-2.5
+              text-sm
+              font-semibold
+              text-gray-300
+              transition
+              hover:text-white
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+              sm:w-auto
+              sm:px-6
+              sm:py-3
+              sm:text-base
+              xl:px-7
+              xl:py-3.5
+              2xl:px-8
+              2xl:py-4
+              2xl:text-lg
+            "
+          >
+            Cancel
+          </button>
+
+        </div>
+      ) : (
+        <div className="pt-5 border-t border-slate-700 flex justify-start sm:pt-6 md:justify-center lg:justify-start xl:pt-7 2xl:pt-8">
+
+          <button
+            type="button"
+            onClick={handleEditClick}
+            className="
+              w-full
+              flex
+              items-center
+              justify-center
+              gap-2
+              rounded-xl
+              bg-blue-600
+              px-5
+              py-2.5
+              text-sm
+              text-white
+              font-semibold
+              transition-all
+              hover:bg-blue-500
+              hover:shadow-lg
+              hover:shadow-blue-600/20
+              sm:w-auto
+              sm:min-w-[200px]
+              sm:px-6
+              sm:py-3
+              sm:text-base
+              xl:min-w-[220px]
+              xl:px-7
+              xl:py-3.5
+              2xl:min-w-[240px]
+              2xl:px-8
+              2xl:py-4
+              2xl:text-lg
+            "
+          >
+            <HiPencil className="text-base" />
+            Edit Hero
+          </button>
+
+        </div>
+      )}
 
     </form>
   );

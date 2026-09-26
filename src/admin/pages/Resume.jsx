@@ -141,128 +141,128 @@ export default function Resume() {
   }
 
   // ======================================================
+  // SHARED CLASSES (matches Certificates page)
+  // ======================================================
+
+  const labelClasses = "mb-1.5 block text-xs font-medium text-gray-400";
+
+  // ======================================================
   // UI
   // ======================================================
 
   return (
     <Layout title="Manage Resume">
-      <div className="max-w-6xl">
+      <div className="max-w-6xl xl:max-w-7xl 2xl:max-w-none">
         {/* PAGE HEADER */}
-        <div className="mb-8">
-          <p className="text-sm font-semibold uppercase tracking-[5px] text-blue-400">
-            Portfolio Management
+        <div className="mb-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-400">
+            Portfolio management
           </p>
-          <h2 className="mt-3 text-4xl font-black text-white">
-            Resume Management
+          <h2 className="mt-1 text-xl font-bold text-white sm:text-2xl">
+            Resume
           </h2>
-          <p className="mt-3 text-gray-400">
+          <p className="mt-1 text-xs text-gray-500 sm:text-sm">
             Upload, replace, view or remove your professional resume.
           </p>
         </div>
 
-        {/* UPLOAD SECTION */}
-        <div className="mb-10 rounded-3xl border border-slate-700 bg-[#111827] p-7 shadow-xl">
-          <div className="mb-6">
-            <p className="text-sm font-semibold uppercase tracking-[4px] text-blue-400">
-              Resume
-            </p>
-            <h3 className="mt-2 text-2xl font-black text-white">
-              {resumeURL ? "Replace Resume" : "Upload Resume"}
-            </h3>
-            <p className="mt-2 text-gray-400">
-              Upload your latest resume in PDF format.
-            </p>
-          </div>
+        {/* UPLOAD / REPLACE RESUME */}
+        <div className="rounded-xl border border-slate-800 bg-[#111827] p-4 sm:p-5">
+          <form ref={formRef} onSubmit={handleUpload} className="space-y-4">
+            <div>
+              <label className={labelClasses}>Resume PDF</label>
 
-          <form ref={formRef} onSubmit={handleUpload}>
-            <label className="mb-2 block text-sm font-semibold text-gray-200">
-              Resume PDF
-            </label>
+              <div className="rounded-lg border border-dashed border-slate-700 bg-slate-800/30 p-3.5">
+                <input
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  onChange={handleFileChange}
+                  disabled={uploading}
+                  className="block w-full text-xs text-gray-400 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+                />
 
-            <input
-              type="file"
-              accept="application/pdf,.pdf"
-              onChange={handleFileChange}
-              className="block w-full cursor-pointer rounded-xl border border-slate-700 bg-[#1e293b] px-4 py-3 text-sm text-gray-300 file:mr-4 file:rounded-lg file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-blue-700"
-            />
-
-            <p className="mt-2 text-sm text-gray-500">
-              PDF only • Maximum file size: 10 MB
-            </p>
-
-            {selectedFile && (
-              <div className="mt-5 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
-                <p className="text-sm font-semibold text-blue-400">
-                  Selected File
+                <p className="mt-2.5 text-[11px] text-gray-600">
+                  PDF files only. Maximum file size: 10 MB.
                 </p>
-                <p className="mt-1 break-all text-gray-300">
-                  {selectedFile.name}
-                </p>
-                <p className="mt-1 text-xs text-gray-500">
-                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                </p>
+
+                {selectedFile && (
+                  <div className="mt-3 rounded-lg border border-green-500/20 bg-green-500/5 px-3 py-2.5">
+                    <p className="text-[11px] text-gray-500">Selected file</p>
+                    <p className="mt-0.5 break-all text-xs text-green-400">
+                      {selectedFile.name}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-gray-500">
+                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
 
-            <div className="mt-6">
+            <div className="flex flex-col gap-2.5 border-t border-slate-800 pt-3.5 sm:flex-row-reverse">
               <button
                 type="submit"
                 disabled={uploading || !selectedFile}
-                className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-7 py-3 font-bold text-white shadow-lg transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold
+                  text-white transition hover:bg-blue-500 disabled:cursor-not-allowed
+                  disabled:opacity-60 sm:w-auto sm:px-6"
               >
                 {uploading
                   ? "Uploading..."
                   : resumeURL
-                  ? "Replace Resume"
-                  : "Upload Resume"}
+                  ? "Replace resume"
+                  : "Upload resume"}
               </button>
             </div>
           </form>
         </div>
 
-        {/* CURRENT RESUME SECTION */}
-        <div>
-          <div className="mb-5">
-            <p className="text-sm font-semibold uppercase tracking-[5px] text-blue-400">
-              Current Resume
-            </p>
-            <h3 className="mt-2 text-3xl font-black text-white">
-              Resume Status
-            </h3>
-            <p className="mt-2 text-gray-400">
-              Manage the resume currently stored in Firebase Storage.
-            </p>
+        {/* CURRENT RESUME STATUS */}
+        <div className="mt-6 sm:mt-8">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-white">
+                Resume status
+              </h3>
+              <p className="mt-0.5 truncate text-xs text-gray-500">
+                Manage the resume currently stored in Firebase Storage.
+              </p>
+            </div>
           </div>
 
           {loading ? (
-            <div className="rounded-2xl border border-slate-700 bg-[#111827] p-6">
-              <p className="text-gray-400">Checking current resume...</p>
+            <div className="rounded-xl border border-slate-800 bg-[#111827] p-8 text-center">
+              <div className="mx-auto h-7 w-7 animate-spin rounded-full border-[3px] border-slate-700 border-t-blue-500" />
+              <p className="mt-2.5 text-xs text-gray-500">
+                Checking current resume...
+              </p>
             </div>
           ) : resumeURL ? (
-            <div className="rounded-2xl border border-slate-700 bg-[#111827] p-6">
-              <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
-                <div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h4 className="text-xl font-bold text-white">
-                      Current Resume
-                    </h4>
-                    <span className="rounded-full bg-green-500/10 px-3 py-1 text-sm font-semibold text-green-400">
+            <div className="rounded-lg border border-slate-800 bg-[#111827] p-3.5 transition hover:border-slate-700">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-white">
+                      Current resume
+                    </p>
+                    <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-[11px] font-medium text-green-400">
                       Available
                     </span>
                   </div>
-                  <p className="mt-2 text-sm text-gray-400">
+                  <p className="mt-1 text-xs text-gray-500">
                     Your latest resume is currently stored in Firebase Storage.
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
+                <div className="flex shrink-0 flex-wrap gap-1.5">
                   <a
                     href={resumeURL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                    className="rounded-lg border border-blue-500/25 bg-blue-500/10 px-3 py-1.5
+                      text-xs font-semibold text-blue-400 transition hover:bg-blue-500/20"
                   >
-                    View Resume
+                    View
                   </a>
 
                   <a
@@ -270,7 +270,8 @@ export default function Resume() {
                     target="_blank"
                     rel="noopener noreferrer"
                     download="Santosh-Chaurasia-Resume.pdf"
-                    className="rounded-xl border border-blue-500/40 px-5 py-2.5 text-sm font-semibold text-blue-400 transition hover:bg-blue-500/10"
+                    className="rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1.5
+                      text-xs font-semibold text-gray-300 transition hover:text-white"
                   >
                     Download
                   </a>
@@ -279,7 +280,9 @@ export default function Resume() {
                     type="button"
                     onClick={handleDelete}
                     disabled={deleting}
-                    className="rounded-xl border border-red-500/40 px-5 py-2.5 text-sm font-semibold text-red-400 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-1.5
+                      text-xs font-semibold text-red-400 transition hover:bg-red-500/20
+                      disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {deleting ? "Deleting..." : "Delete"}
                   </button>
@@ -287,18 +290,16 @@ export default function Resume() {
               </div>
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-slate-700 bg-[#111827] p-8 text-center">
-              <div className="mx-auto max-w-xl">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/10 text-3xl">
-                  📄
-                </div>
-                <h4 className="mt-5 text-xl font-bold text-white">
-                  No Resume Uploaded
-                </h4>
-                <p className="mt-2 text-gray-400">
-                  Upload your latest PDF resume using the form above.
-                </p>
+            <div className="rounded-xl border border-slate-800 bg-[#111827] p-8 text-center">
+              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-base text-blue-400">
+                +
               </div>
+              <h4 className="mt-3 text-sm font-semibold text-white">
+                No resume uploaded
+              </h4>
+              <p className="mt-1 text-xs text-gray-500">
+                Upload your latest PDF resume using the form above.
+              </p>
             </div>
           )}
         </div>
