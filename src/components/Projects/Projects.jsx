@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import Container from "../common/Container";
 import ProjectCard from "./ProjectCard";
@@ -6,11 +6,46 @@ import ProjectModal from "./ProjectModal";
 import SectionAnimation from "../common/SectionAnimation";
 
 import { getProjects } from "../../firebase/firestore";
+import { PROJECT_CATEGORIES, matchesCategory } from "./projectTypeUtils";
 
 export default function Projects() {
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // SEARCH + FILTER — plain search (no suggestions, user types
+  // freely) combined with a category filter.
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef(null);
+
+  const filterOptions = [{ value: "all", label: "All Projects" }, ...PROJECT_CATEGORIES];
+  const activeOption = filterOptions.find((option) => option.value === activeFilter);
+
+  // ========================================
+  // FILTER DROPDOWN — close on outside click / Escape
+  // ========================================
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (filterRef.current && !filterRef.current.contains(e.target)) {
+        setFilterOpen(false);
+      }
+    }
+
+    function handleEscape(e) {
+      if (e.key === "Escape") setFilterOpen(false);
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
 
   // ========================================
   // LOAD PROJECTS FROM FIRESTORE
@@ -43,6 +78,33 @@ export default function Projects() {
 
     loadProjects();
   }, []);
+
+  // ========================================
+  // FILTERED PROJECTS — category filter first, then search
+  // ========================================
+
+  const filteredProjects = useMemo(() => {
+    const categoryFiltered = projects.filter((project) =>
+      matchesCategory(project, activeFilter)
+    );
+
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return categoryFiltered;
+
+    return categoryFiltered.filter((project) => {
+      const titleMatch = (project.title || "").toLowerCase().includes(query);
+      const descriptionMatch = (project.description || "")
+        .toLowerCase()
+        .includes(query);
+      const techMatch =
+        Array.isArray(project.technologies) &&
+        project.technologies.some((tech) =>
+          (tech || "").toLowerCase().includes(query)
+        );
+
+      return titleMatch || descriptionMatch || techMatch;
+    });
+  }, [projects, activeFilter, searchQuery]);
 
   // ========================================
   // LOADING
@@ -101,14 +163,100 @@ export default function Projects() {
 
 
           {/* ========================================
+              SEARCH + FILTER
+          ======================================== */}
+
+          <div className="mx-auto mt-8 sm:mt-10 flex max-w-2xl flex-col gap-3 sm:flex-row">
+
+            {/* SEARCH — plain text input, no suggestions */}
+            <div className="relative flex-1">
+              <svg
+                viewBox="0 0 24 24"
+                className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 fill-none stroke-current stroke-2 text-gray-500"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path strokeLinecap="round" d="M21 21l-4.3-4.3" />
+              </svg>
+
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search projects..."
+                className="w-full rounded-full border border-slate-700 bg-[#111827] py-2.5 sm:py-3 pl-11 pr-4
+                  text-sm sm:text-base text-white placeholder:text-gray-500 outline-none transition
+                  focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30"
+              />
+            </div>
+
+            {/* CATEGORY FILTER — custom dropdown (styled to match
+                the site's dark theme instead of the default browser select) */}
+            <div className="relative z-20 sm:w-56" ref={filterRef}>
+              <button
+                type="button"
+                onClick={() => setFilterOpen((prev) => !prev)}
+                aria-haspopup="listbox"
+                aria-expanded={filterOpen}
+                className={`flex w-full items-center justify-between gap-2 rounded-full border bg-[#111827]
+                  py-2.5 sm:py-3 pl-4 pr-3.5 text-left text-sm sm:text-base text-white outline-none transition
+                  ${filterOpen ? "border-blue-500 ring-1 ring-blue-500/30" : "border-slate-700 hover:border-slate-600"}`}
+              >
+                <span className="truncate">{activeOption?.label}</span>
+                <svg
+                  viewBox="0 0 24 24"
+                  className={`h-4 w-4 shrink-0 fill-none stroke-current stroke-2 text-gray-400 transition-transform duration-200 ${
+                    filterOpen ? "rotate-180" : ""
+                  }`}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+
+              {filterOpen && (
+                <div
+                  role="listbox"
+                  className="absolute left-0 right-0 top-[calc(100%+6px)] overflow-hidden rounded-xl
+                    border border-slate-700 bg-[#111827] shadow-xl shadow-black/40"
+                >
+                  {filterOptions.map((option) => {
+                    const isActive = option.value === activeFilter;
+
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        role="option"
+                        aria-selected={isActive}
+                        onClick={() => {
+                          setActiveFilter(option.value);
+                          setFilterOpen(false);
+                        }}
+                        className={`block w-full border-b border-slate-800/70 px-4 py-2.5 text-left text-sm sm:text-base
+                          transition last:border-b-0
+                          ${isActive ? "bg-blue-500/15 text-blue-400" : "text-gray-300 hover:bg-slate-800/80"}`}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+          </div>
+
+
+          {/* ========================================
               NO PROJECTS
           ======================================== */}
 
-          {projects.length === 0 ? (
+          {filteredProjects.length === 0 ? (
 
             <div className="mt-12 sm:mt-16 text-center">
               <p className="text-sm sm:text-base text-gray-500">
-                No projects available.
+                {projects.length === 0
+                  ? "No projects available."
+                  : "No projects match your search or filter."}
               </p>
             </div>
 
@@ -134,7 +282,7 @@ export default function Projects() {
               "
             >
 
-              {projects.map((project) => (
+              {filteredProjects.map((project) => (
 
                 <ProjectCard
                   key={project.id}

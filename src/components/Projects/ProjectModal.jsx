@@ -1,5 +1,6 @@
 import Button from "../common/Button";
 import TechBadge from "./TechBadge";
+import { getCategoryLabel, getCategoryBadgeClasses } from "./projectTypeUtils";
 
 export default function ProjectModal({ project, onClose }) {
   if (!project) return null;
@@ -17,12 +18,19 @@ export default function ProjectModal({ project, onClose }) {
         </button>
 
         {/* Header Tag */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <span className="uppercase tracking-[4px] sm:tracking-[6px] text-blue-400 text-[10px] sm:text-xs font-semibold">
             Project Details
           </span>
           <span className="bg-blue-600/20 text-blue-400 text-[10px] sm:text-xs px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full font-medium">
             {project.year}
+          </span>
+          <span
+            className={`rounded-full border px-2.5 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-xs font-medium ${getCategoryBadgeClasses(
+              project.category
+            )}`}
+          >
+            {getCategoryLabel(project.category)}
           </span>
         </div>
 

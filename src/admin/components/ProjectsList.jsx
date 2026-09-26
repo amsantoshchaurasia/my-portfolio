@@ -16,6 +16,10 @@ export default function ProjectsList({ refresh, onEditProject }) {
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef(null);
 
+  // SEARCH — filters by title or technology name, works together
+  // with the category filter above (both apply at once)
+  const [searchQuery, setSearchQuery] = useState("");
+
   // ========================================
   // LOAD PROJECTS
   // ========================================
@@ -122,12 +126,12 @@ export default function ProjectsList({ refresh, onEditProject }) {
           dot: "bg-purple-400",
         };
       // Legacy projects saved before the "type" field existed have no
-      // category — shown as a distinct neutral "Other" instead of
-      // being lumped visually into one of the real categories.
+      // category — shown as "Other". Accent strip is blue (same as
+      // the badge dot below) instead of neutral slate.
       default:
         return {
           badge: "bg-slate-500/15 text-slate-400",
-          accent: "bg-slate-400/70",
+          accent: "bg-blue-400/80",
           dot: "bg-slate-400",
         };
     }
@@ -225,12 +229,27 @@ export default function ProjectsList({ refresh, onEditProject }) {
 
   const knownCategories = ["web", "app", "analytics"];
 
-  const filteredProjects =
+  // Category filter applied first...
+  const categoryFiltered =
     activeFilter === "all"
       ? projects
       : activeFilter === "other"
         ? projects.filter((project) => !knownCategories.includes(project.category))
         : projects.filter((project) => project.category === activeFilter);
+
+  // ...then search narrows further by title or technology name.
+  const query = searchQuery.trim().toLowerCase();
+  const filteredProjects = query
+    ? categoryFiltered.filter((project) => {
+        const titleMatch = (project.title || "").toLowerCase().includes(query);
+        const techMatch =
+          Array.isArray(project.technologies) &&
+          project.technologies.some((tech) =>
+            (tech || "").toLowerCase().includes(query)
+          );
+        return titleMatch || techMatch;
+      })
+    : categoryFiltered;
 
   const activeTab = filterTabs.find((tab) => tab.id === activeFilter);
 
@@ -256,113 +275,152 @@ export default function ProjectsList({ refresh, onEditProject }) {
         </span>
       </div>
 
-      {/* CATEGORY FILTER — custom dropdown with a color dot per
-          category so the type is recognizable at a glance, not
-          just from the text label */}
-      <div className="relative z-20 mb-4 sm:max-w-xs" ref={filterRef}>
-        <button
-          type="button"
-          onClick={() => setFilterOpen((prev) => !prev)}
-          aria-haspopup="listbox"
-          aria-expanded={filterOpen}
-          className={`flex w-full items-center justify-between gap-2 rounded-lg border bg-slate-800/60
-            px-3.5 py-2.5 text-left text-sm text-white outline-none transition
-            ${filterOpen ? "border-blue-500 ring-1 ring-blue-500/30" : "border-slate-700 hover:border-slate-600"}`}
-        >
-          <span className="flex min-w-0 items-center gap-2.5">
-            {activeFilter === "all" ? (
-              <svg
-                viewBox="0 0 24 24"
-                className="h-4 w-4 shrink-0 fill-none stroke-current stroke-2 text-gray-400"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 5h16l-6 7v6l-4 2v-8L4 5z" />
-              </svg>
-            ) : (
-              <span
-                className={`h-2.5 w-2.5 shrink-0 rounded-full ${getCategoryColors(
-                  activeFilter === "other" ? undefined : activeFilter
-                ).dot}`}
-              />
-            )}
-            <span className="truncate">{activeTab?.label}</span>
-          </span>
-
+      {/* SEARCH + CATEGORY FILTER — same row on larger screens,
+          stacked on mobile */}
+      <div className="mb-4 flex flex-col gap-2.5 sm:flex-row">
+        {/* SEARCH BOX */}
+        <div className="relative flex-1">
           <svg
             viewBox="0 0 24 24"
-            className={`h-4 w-4 shrink-0 fill-none stroke-current stroke-2 text-gray-400 transition-transform duration-200 ${
-              filterOpen ? "rotate-180" : ""
-            }`}
+            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 fill-none stroke-current stroke-2 text-gray-500"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+            <circle cx="11" cy="11" r="7" />
+            <path strokeLinecap="round" d="M21 21l-4.3-4.3" />
           </svg>
-        </button>
 
-        {filterOpen && (
-          <div
-            role="listbox"
-            className="absolute left-0 right-0 top-[calc(100%+6px)] overflow-hidden rounded-lg
-              border border-slate-700 bg-[#182233] shadow-xl shadow-black/40"
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by title or technology..."
+            className="w-full rounded-lg border border-slate-700 bg-slate-800/60 py-2.5 pl-10 pr-9
+              text-sm text-white placeholder:text-gray-500 outline-none transition
+              focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30"
+          />
+
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              aria-label="Clear search"
+              className="absolute right-3 top-1/2 flex h-4 w-4 -translate-y-1/2 items-center justify-center
+                text-gray-500 transition hover:text-gray-300"
+            >
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-none stroke-current stroke-2">
+                <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* CATEGORY FILTER — custom dropdown with a color dot per
+            category so the type is recognizable at a glance, not
+            just from the text label */}
+        <div className="relative z-20 sm:w-56" ref={filterRef}>
+          <button
+            type="button"
+            onClick={() => setFilterOpen((prev) => !prev)}
+            aria-haspopup="listbox"
+            aria-expanded={filterOpen}
+            className={`flex w-full items-center justify-between gap-2 rounded-lg border bg-slate-800/60
+              px-3.5 py-2.5 text-left text-sm text-white outline-none transition
+              ${filterOpen ? "border-blue-500 ring-1 ring-blue-500/30" : "border-slate-700 hover:border-slate-600"}`}
           >
-            {filterTabs.map((tab) => {
-              const count =
-                tab.id === "all"
-                  ? projects.length
-                  : tab.id === "other"
-                    ? projects.filter((p) => !knownCategories.includes(p.category)).length
-                    : projects.filter((p) => p.category === tab.id).length;
-
-              const isActive = tab.id === activeFilter;
-
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="option"
-                  aria-selected={isActive}
-                  onClick={() => {
-                    setActiveFilter(tab.id);
-                    setFilterOpen(false);
-                  }}
-                  className={`flex w-full items-center justify-between gap-2 px-3.5 py-2.5 text-left text-sm
-                    transition border-b border-slate-800/70 last:border-b-0
-                    ${isActive ? "bg-blue-500/15 text-blue-400" : "text-gray-300 hover:bg-slate-800/80"}`}
+            <span className="flex min-w-0 items-center gap-2.5">
+              {activeFilter === "all" ? (
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4 shrink-0 fill-none stroke-current stroke-2 text-gray-400"
                 >
-                  <span className="flex min-w-0 items-center gap-2.5">
-                    {tab.id === "all" ? (
-                      <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center">
-                        {isActive && (
-                          <svg
-                            viewBox="0 0 24 24"
-                            className="h-3.5 w-3.5 fill-none stroke-current stroke-[3]"
-                          >
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        )}
-                      </span>
-                    ) : (
-                      <span
-                        className={`h-2.5 w-2.5 shrink-0 rounded-full ${getCategoryColors(
-                          tab.id === "other" ? undefined : tab.id
-                        ).dot}`}
-                      />
-                    )}
-                    <span className="truncate">{tab.label}</span>
-                  </span>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 5h16l-6 7v6l-4 2v-8L4 5z" />
+                </svg>
+              ) : (
+                <span
+                  className={`h-2.5 w-2.5 shrink-0 rounded-full ${getCategoryColors(
+                    activeFilter === "other" ? undefined : activeFilter
+                  ).dot}`}
+                />
+              )}
+              <span className="truncate">{activeTab?.label}</span>
+            </span>
 
-                  <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                      isActive
-                        ? "bg-blue-500/20 text-blue-300"
-                        : "bg-slate-700/60 text-gray-400"
-                    }`}
+            <svg
+              viewBox="0 0 24 24"
+              className={`h-4 w-4 shrink-0 fill-none stroke-current stroke-2 text-gray-400 transition-transform duration-200 ${
+                filterOpen ? "rotate-180" : ""
+              }`}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+
+          {filterOpen && (
+            <div
+              role="listbox"
+              className="absolute left-0 right-0 top-[calc(100%+6px)] overflow-hidden rounded-lg
+                border border-slate-700 bg-[#182233] shadow-xl shadow-black/40"
+            >
+              {filterTabs.map((tab) => {
+                const count =
+                  tab.id === "all"
+                    ? projects.length
+                    : tab.id === "other"
+                      ? projects.filter((p) => !knownCategories.includes(p.category)).length
+                      : projects.filter((p) => p.category === tab.id).length;
+
+                const isActive = tab.id === activeFilter;
+
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="option"
+                    aria-selected={isActive}
+                    onClick={() => {
+                      setActiveFilter(tab.id);
+                      setFilterOpen(false);
+                    }}
+                    className={`flex w-full items-center justify-between gap-2 px-3.5 py-2.5 text-left text-sm
+                      transition border-b border-slate-800/70 last:border-b-0
+                      ${isActive ? "bg-blue-500/15 text-blue-400" : "text-gray-300 hover:bg-slate-800/80"}`}
                   >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        )}
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      {tab.id === "all" ? (
+                        <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center">
+                          {isActive && (
+                            <svg
+                              viewBox="0 0 24 24"
+                              className="h-3.5 w-3.5 fill-none stroke-current stroke-[3]"
+                            >
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          )}
+                        </span>
+                      ) : (
+                        <span
+                          className={`h-2.5 w-2.5 shrink-0 rounded-full ${getCategoryColors(
+                            tab.id === "other" ? undefined : tab.id
+                          ).dot}`}
+                        />
+                      )}
+                      <span className="truncate">{tab.label}</span>
+                    </span>
+
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                        isActive
+                          ? "bg-blue-500/20 text-blue-300"
+                          : "bg-slate-700/60 text-gray-400"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* EMPTY STATE */}
@@ -372,12 +430,12 @@ export default function ProjectsList({ refresh, onEditProject }) {
             +
           </div>
           <h4 className="mt-3 text-sm font-semibold text-white">
-            {projects.length === 0 ? "No projects yet" : "No projects in this category"}
+            {projects.length === 0 ? "No projects yet" : "No projects match"}
           </h4>
           <p className="mt-1 text-xs text-gray-500">
             {projects.length === 0
               ? "Add your first project using the form above."
-              : "Try a different filter or add a new project above."}
+              : "Try a different search term or filter."}
           </p>
         </div>
       ) : (

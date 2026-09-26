@@ -1,5 +1,6 @@
 import Button from "../common/Button";
 import TechBadge from "./TechBadge";
+import { getCategoryLabel, getCategoryBadgeClasses } from "./projectTypeUtils";
 
 export default function ProjectCard({
   project,
@@ -36,13 +37,23 @@ export default function ProjectCard({
 
         {/* Header */}
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
 
-          <span className="uppercase tracking-[2px] sm:tracking-[4px] text-[10px] sm:text-xs text-gray-500">
-            Project
-          </span>
+          <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+            <span className="uppercase tracking-[2px] sm:tracking-[4px] text-[10px] sm:text-xs text-gray-500">
+              Project
+            </span>
 
-          <span className="bg-blue-600/20 text-blue-400 text-xs sm:text-sm px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full">
+            <span
+              className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-medium ${getCategoryBadgeClasses(
+                project.category
+              )}`}
+            >
+              {getCategoryLabel(project.category)}
+            </span>
+          </div>
+
+          <span className="shrink-0 bg-blue-600/20 text-blue-400 text-xs sm:text-sm px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full">
             {project.year}
           </span>
 
@@ -90,6 +101,12 @@ export default function ProjectCard({
         </p>
 
 
+        {/* Flexible spacer — absorbs the extra height on short
+            cards, so the tech row + buttons always stay pinned
+            together at the bottom instead of sticking to the text */}
+        <div className="flex-1" />
+
+
         {/* ========================================
             TECHNOLOGIES
         ======================================== */}
@@ -118,7 +135,6 @@ export default function ProjectCard({
             sm:gap-3
             pt-4
             sm:pt-5
-            mt-auto
           "
         >
 

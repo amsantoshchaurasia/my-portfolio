@@ -1,21 +1,23 @@
 import { useEffect, useState } from "react";
-import { FiExternalLink, FiFileText, FiLoader, FiStar } from "react-icons/fi";
+import { FiExternalLink, FiFileText, FiLoader } from "react-icons/fi";
 
 import { getCertificateFileURL } from "../../firebase/storage";
+import {
+  getCertificateCategoryLabel,
+  getCertificateCategoryBadgeClasses,
+  getPlatformColor,
+  getTechColor,
+} from "./certificateTypeUtils";
 
-const MAX_VISIBLE_TAGS = 3;
+// Total badges shown in the bottom row before collapsing into "+N"
+// (platform + tech tags combined, in admin's order — so the first
+// tech tag admin picked is treated as the "main" tech).
+const MAX_VISIBLE_BADGES = 3;
 
-// "Power BI" and "PowerBI" should count as the same tag
-const clean = (value) => String(value).toLowerCase().replace(/[\s\-_.]/g, "");
-
-export default function CertificateCard({
-  certificate,
-  tags = [],
-  featured = false,
-  activeTag = "",
-}) {
+export default function CertificateCard({ certificate, tags = [] }) {
   const [fileUrl, setFileUrl] = useState(null);
   const [loadingFile, setLoadingFile] = useState(true);
+  const [showAllBadges, setShowAllBadges] = useState(false);
 
   // ======================================================
   // RESOLVE FILE (fileUrl -> storagePath -> pdf)
@@ -60,30 +62,45 @@ export default function CertificateCard({
     };
   }, [certificate?.fileUrl, certificate?.storagePath, certificate?.pdf]);
 
-  const visibleTags = tags.slice(0, MAX_VISIBLE_TAGS);
-  const extraTags = tags.length - visibleTags.length;
+  // ======================================================
+  // BADGES — platform first (if present), then tech tags in
+  // the order admin added them. Combined list is what gets
+  // truncated to MAX_VISIBLE_BADGES.
+  // ======================================================
+
+  const allBadges = [
+    ...(certificate?.company
+      ? [{ key: "platform", label: certificate.company, className: getPlatformColor(certificate.company) }]
+      : []),
+    ...tags.map((tag) => ({ key: `tag-${tag}`, label: tag, className: getTechColor(tag) })),
+  ];
+
+  const visibleBadges = showAllBadges ? allBadges : allBadges.slice(0, MAX_VISIBLE_BADGES);
+  const hiddenCount = allBadges.length - MAX_VISIBLE_BADGES;
 
   // ======================================================
-  // UI
-  // Size 1 (375x667) = base classes -> LOCKED, not changed.
-  // Size 2 (640x900)  = sm: classes  -> same look as size 1,
-  // font / font size / gap scaled from Experience.
+  // UI — header row matches ProjectCard exactly:
+  // "CERTIFICATE" label + type badge (left) / year (right).
+  // Title below. Platform + tech badges share ONE row below
+  // the title while collapsed — capped at 3 with "+N", each
+  // badge label truncates so nothing is ever half-cut and
+  // "+N" always stays on the same line. Clicking "+N" switches
+  // the row to wrap mode, showing every badge (full text) on
+  // as many rows as needed, with a "Show less" to collapse back.
   // ======================================================
 
   return (
     <div
-      className={`
+      className="
         group
         flex
         h-full
         w-full
         flex-col
-        gap-3
-        sm:gap-2.5
-        md:gap-3
         rounded-xl
         sm:rounded-2xl
         border
+        border-slate-800
         bg-slate-900/60
         p-4
         sm:px-5
@@ -100,69 +117,101 @@ export default function CertificateCard({
         hover:-translate-y-1
         hover:border-blue-500/60
         hover:shadow-[0_10px_30px_rgba(37,99,235,0.10)]
-        ${featured ? "border-blue-500/40" : "border-slate-800"}
-      `}
+      "
     >
-      {/* Company + Year */}
-      <div className="flex items-center justify-between gap-3">
-        {certificate?.company ? (
-          <span className="inline-flex w-fit rounded-full bg-blue-500/10 px-2.5 sm:px-3 md:px-3.5 py-1 text-xs md:text-sm 2xl:text-[15px] font-medium text-blue-400 sm:border sm:border-blue-500/20">
-            {certificate.company}
-          </span>
-        ) : (
-          <span />
-        )}
 
-        <div className="flex shrink-0 items-center gap-2 text-xs md:text-sm 2xl:text-[15px] font-medium text-gray-400">
-          {featured && (
-            <FiStar
-              size={13}
-              title="Featured"
-              className="md:h-4 md:w-4 fill-amber-400/20 text-amber-400"
-            />
-          )}
-          {certificate?.year}
+      {/* Header — label + type badge (left), year (right) */}
+      <div className="flex items-center justify-between gap-2">
+
+        <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+          <span className="uppercase tracking-[2px] sm:tracking-[4px] text-[10px] sm:text-xs text-gray-500">
+            Certificate
+          </span>
+
+          <span
+            className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-medium ${getCertificateCategoryBadgeClasses(
+              certificate?.category
+            )}`}
+          >
+            {getCertificateCategoryLabel(certificate?.category)}
+          </span>
         </div>
+
+        <span className="shrink-0 bg-blue-600/20 text-blue-400 text-xs sm:text-sm px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full">
+          {certificate?.year}
+        </span>
+
       </div>
 
-      {/* Title + Skills */}
-      <div className="flex flex-1 flex-col gap-2.5 md:gap-3">
-        <h4
-          title={certificate?.title}
-          className="line-clamp-2 sm:line-clamp-1 text-base md:text-lg lg:text-base xl:text-xl 2xl:text-[22px] font-semibold sm:font-bold sm:tracking-tight leading-snug text-white">
-          {certificate?.title}
-        </h4>
+      {/* Title */}
+      <h3
+        title={certificate?.title}
+        className="
+          mt-3
+          sm:mt-4
+          md:mt-5
+          lg:mt-3
+          xl:mt-5
+          line-clamp-2
+          text-lg
+          sm:text-xl
+          md:text-2xl
+          lg:text-xl
+          xl:text-2xl
+          font-bold
+          leading-tight
+        "
+      >
+        {certificate?.title}
+      </h3>
 
-        {visibleTags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {visibleTags.map((tag) => {
-              const isActive =
-                activeTag && clean(tag) === clean(activeTag);
-              return (
-                <span
-                  key={tag}
-                  className={`rounded-md border px-2 py-0.5 text-[11px] sm:text-xs font-medium ${
-                    isActive
-                      ? "border-blue-500/50 bg-blue-500/10 text-blue-300"
-                      : "border-slate-700/70 bg-slate-800/50 text-gray-400"
-                  }`}
-                >
-                  {tag}
-                </span>
-              );
-            })}
+      {/* Flexible spacer — pins the badges + link together at the
+          bottom, same idea as ProjectCard's spacer */}
+      <div className="flex-1" />
 
-            {extraTags > 0 && (
-              <span className="rounded-md border border-slate-700/70 bg-slate-800/50 px-2 py-0.5 text-[11px] sm:text-xs font-medium text-gray-500">
-                +{extraTags}
-              </span>
-            )}
-          </div>
+      {/* Platform + tech badges */}
+      <div
+        className={`mt-4 sm:mt-5 flex items-center gap-2 sm:gap-2.5 ${
+          showAllBadges ? "flex-wrap" : "flex-nowrap"
+        }`}
+      >
+
+        {visibleBadges.map((badge) => (
+          <span
+            key={badge.key}
+            title={badge.label}
+            className={`shrink-0 rounded-full border bg-slate-800/60 px-2.5 py-1 text-xs sm:text-sm font-medium ${
+              badge.className
+            } ${showAllBadges ? "" : "max-w-[92px] sm:max-w-[110px] md:max-w-[130px] truncate"}`}
+          >
+            {badge.label}
+          </span>
+        ))}
+
+        {!showAllBadges && hiddenCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setShowAllBadges(true)}
+            className="shrink-0 rounded-full border border-slate-700/70 bg-slate-800/60 px-2.5 py-1 text-xs sm:text-sm font-medium text-gray-400 transition hover:border-slate-600 hover:text-white"
+          >
+            +{hiddenCount}
+          </button>
         )}
+
+        {showAllBadges && allBadges.length > MAX_VISIBLE_BADGES && (
+          <button
+            type="button"
+            onClick={() => setShowAllBadges(false)}
+            className="shrink-0 rounded-full border border-slate-700/70 bg-slate-800/60 px-2.5 py-1 text-xs sm:text-sm font-medium text-gray-400 transition hover:border-slate-600 hover:text-white"
+          >
+            Show less
+          </button>
+        )}
+
       </div>
 
       {/* Link */}
-      <div className="border-t border-slate-800/60 sm:border-slate-700/60 pt-2.5 sm:pt-3 md:pt-4">
+      <div className="pt-4 sm:pt-5">
         {loadingFile ? (
           <span className="inline-flex items-center gap-1.5 text-sm md:text-base 2xl:text-[17px] text-gray-500">
             <FiLoader size={13} className="sm:h-4 sm:w-4 animate-spin" />
@@ -204,6 +253,7 @@ export default function CertificateCard({
           </span>
         )}
       </div>
+
     </div>
   );
 }

@@ -12,10 +12,42 @@ import {
 const initialForm = {
   title: "",
   company: "",
+  category: "web",
   year: "",
   order: 1,
   tags: "",
 };
+
+// ======================================================
+// CERTIFICATE TYPE — same values/labels as ProjectsForm's
+// category, so both admin pages stay consistent.
+// ======================================================
+
+const CERTIFICATE_TYPES = [
+  { value: "web", label: "Web Development" },
+  { value: "app", label: "App Development" },
+  { value: "analytics", label: "Data Analyst" },
+  { value: "other", label: "Other" },
+];
+
+// ======================================================
+// COMPANY / ISSUER — quick-pick so common issuers don't get
+// typed inconsistently (e.g. "forage" vs "Forage"). The text
+// input still works for anything not listed.
+// ======================================================
+
+const COMPANY_SUGGESTIONS = [
+  "Forage",
+  "Coursera",
+  "Udemy",
+  "Google",
+  "Microsoft",
+  "IBM",
+  "LinkedIn Learning",
+  "Simplilearn",
+  "HackerRank",
+  "freeCodeCamp",
+];
 
 // ======================================================
 // TAGS
@@ -24,11 +56,18 @@ const initialForm = {
 // portfolio filter tabs don't get duplicates like "sql" / "SQL".
 const TAG_SUGGESTIONS = [
   "Data Analytics",
+  "Data Science",
   "Python",
   "SQL",
   "Power BI",
   "Excel",
+  "Tableau",
+  "Machine Learning",
+  "Cloud Computing",
   "Web Development",
+  "App Development",
+  "Communication",
+  "Leadership",
   "Other",
 ];
 
@@ -145,6 +184,10 @@ export default function CertificatesForm({
 
   const [error, setError] = useState("");
 
+  // Tags picker starts collapsed on small screens — see the
+  // responsive max-height on the picker card below.
+  const [showAllTags, setShowAllTags] = useState(false);
+
   // ======================================================
   // EDIT MODE
   // ======================================================
@@ -154,6 +197,7 @@ export default function CertificatesForm({
       setForm({
         title: editingCertificate.title || "",
         company: editingCertificate.company || "",
+        category: editingCertificate.category || "web",
         year: editingCertificate.year || "",
         order: editingCertificate.order || 1,
         tags: tagsToString(editingCertificate.tags),
@@ -198,6 +242,15 @@ export default function CertificatesForm({
       ...prev,
       [name]: value,
     }));
+  }
+
+  // ======================================================
+  // COMPANY QUICK-PICK — clicking fills the text field; the
+  // field stays editable for anything not in the list.
+  // ======================================================
+
+  function selectCompany(company) {
+    setForm((prev) => ({ ...prev, company }));
   }
 
   // ======================================================
@@ -343,6 +396,7 @@ export default function CertificatesForm({
       let certificateData = {
         title: form.title.trim(),
         company: form.company.trim(),
+        category: form.category || "other",
         year: form.year.trim(),
         order: Number(form.order) || 1,
         tags: parseTags(form.tags),
@@ -513,6 +567,49 @@ export default function CertificatesForm({
         </div>
       </div>
 
+      {/* COMPANY QUICK-PICK — click to fill the field above,
+          keeps issuer names spelled consistently */}
+      <div className="-mt-2 flex flex-wrap gap-1.5">
+        {COMPANY_SUGGESTIONS.map((company) => {
+          const active = form.company.trim().toLowerCase() === company.toLowerCase();
+
+          return (
+            <button
+              key={company}
+              type="button"
+              onClick={() => selectCompany(company)}
+              disabled={loading}
+              className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                active
+                  ? "border-blue-500/50 bg-blue-500/15 text-blue-400"
+                  : "border-slate-700 bg-slate-800/60 text-gray-400 hover:border-slate-600 hover:text-white"
+              }`}
+            >
+              {company}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* CERTIFICATE TYPE — same values as ProjectsForm's category,
+          so both list pages can badge/filter/color consistently */}
+      <div className="sm:max-w-xs">
+        <label className={labelClasses}>Certificate type</label>
+        <select
+          name="category"
+          value={form.category}
+          onChange={handleChange}
+          disabled={loading}
+          className={inputClasses}
+        >
+          {CERTIFICATE_TYPES.map((type) => (
+            <option key={type.value} value={type.value}>
+              {type.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* TAGS / SKILLS */}
       <div>
         <label className={labelClasses}>Skills / Tags</label>
@@ -527,30 +624,60 @@ export default function CertificatesForm({
           className={inputClasses}
         />
 
-        {/* QUICK PICK */}
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
-          {TAG_SUGGESTIONS.map((tag) => {
-            const active = selectedTags.some(
-              (item) => item.toLowerCase() === tag.toLowerCase()
-            );
+        {/* QUICK PICK — same cohesive card + footer toggle pattern
+            as the technology picker on the Projects form */}
+        <div className="mt-2.5 overflow-hidden rounded-lg border border-slate-700 bg-slate-800/20">
+          <div
+            className={`flex flex-wrap gap-1.5 p-2.5 transition-[max-height] duration-200 overflow-hidden
+              ${
+                showAllTags
+                  ? "max-h-none"
+                  : "max-h-[46px] sm:max-h-[86px] md:max-h-[126px] lg:max-h-none"
+              }`}
+          >
+            {TAG_SUGGESTIONS.map((tag) => {
+              const active = selectedTags.some(
+                (item) => item.toLowerCase() === tag.toLowerCase()
+              );
 
-            return (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => toggleTag(tag)}
-                disabled={loading}
-                className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                  active
-                    ? "border-blue-500/50 bg-blue-500/15 text-blue-400"
-                    : "border-slate-700 bg-slate-800/60 text-gray-400 hover:border-slate-600 hover:text-white"
-                }`}
-              >
-                {active ? "✓ " : "+ "}
-                {tag}
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => toggleTag(tag)}
+                  disabled={loading}
+                  className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                    active
+                      ? "border-blue-500/50 bg-blue-500/15 text-blue-400"
+                      : "border-slate-700 bg-slate-800/60 text-gray-400 hover:border-slate-600 hover:text-white"
+                  }`}
+                >
+                  {active ? "✓ " : "+ "}
+                  {tag}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* FOOTER TOGGLE BAR — hidden at lg+ since it's always open there */}
+          <button
+            type="button"
+            onClick={() => setShowAllTags((prev) => !prev)}
+            aria-expanded={showAllTags}
+            className="flex w-full items-center justify-center gap-1.5 border-t border-slate-700
+              bg-slate-800/40 py-2 text-[11px] font-medium text-gray-300 transition
+              hover:bg-slate-800/70 hover:text-blue-400 lg:hidden"
+          >
+            {showAllTags ? "Show less" : `Show all tags (${TAG_SUGGESTIONS.length})`}
+            <svg
+              viewBox="0 0 24 24"
+              className={`h-3 w-3 fill-none stroke-current stroke-[3] transition-transform duration-200 ${
+                showAllTags ? "rotate-180" : ""
+              }`}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
         </div>
 
         <p className="mt-1.5 text-[11px] text-gray-600">

@@ -2,6 +2,43 @@ import { useEffect, useState } from "react";
 
 import { createProject, updateProject } from "../../firebase/firestore";
 
+// ========================================
+// KNOWN TECHNOLOGIES — same names used in ProjectsList's color
+// map, so whatever gets picked here always renders with the
+// correct known color instead of falling back to a random one.
+// ========================================
+
+const KNOWN_TECHNOLOGIES = [
+  "Python",
+  "SQL",
+  "MySQL",
+  "PostgreSQL",
+  "Excel",
+  "Power BI",
+  "Tableau",
+  "React",
+  "React Native",
+  "JavaScript",
+  "TypeScript",
+  "HTML",
+  "CSS",
+  "Tailwind CSS",
+  "Node.js",
+  "Firebase",
+  "MongoDB",
+  "Java",
+  "C++",
+  "Git",
+  "GitHub",
+  "NumPy",
+  "Pandas",
+  "Scikit-learn",
+  "Django",
+  "Flask",
+  "Docker",
+  "Figma",
+];
+
 export default function ProjectsForm({
   onProjectAdded,
   editingProject,
@@ -12,12 +49,18 @@ export default function ProjectsForm({
     year: "2026",
     category: "web",
     description: "",
-    technologies: "",
+    technologies: [], // array of selected tech names, click-based
     github: "",
     order: "",
   });
 
+  const [customTech, setCustomTech] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Tech picker starts collapsed to just a row or two on small
+  // screens (see the responsive max-height below); "Show more"
+  // expands it fully at any size.
+  const [showAllTech, setShowAllTech] = useState(false);
 
   // ========================================
   // LOAD PROJECT INTO FORM WHEN EDITING
@@ -37,8 +80,8 @@ export default function ProjectsForm({
         description: editingProject.description || "",
 
         technologies: Array.isArray(editingProject.technologies)
-          ? editingProject.technologies.join(", ")
-          : "",
+          ? editingProject.technologies
+          : [],
 
         github: editingProject.github || "",
 
@@ -50,11 +93,12 @@ export default function ProjectsForm({
         year: "2026",
         category: "web",
         description: "",
-        technologies: "",
+        technologies: [],
         github: "",
         order: "",
       });
     }
+    setCustomTech("");
   }, [editingProject]);
 
   // ========================================
@@ -64,6 +108,62 @@ export default function ProjectsForm({
   function handleChange(e) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  // ========================================
+  // TECH PICKER — click to toggle a known technology on/off.
+  // Comparison is case-insensitive so a custom-added tech that
+  // happens to match a known one (different casing) still
+  // highlights correctly.
+  // ========================================
+
+  function toggleTech(tech) {
+    setForm((prev) => {
+      const exists = prev.technologies.some(
+        (item) => item.toLowerCase() === tech.toLowerCase()
+      );
+
+      const technologies = exists
+        ? prev.technologies.filter(
+            (item) => item.toLowerCase() !== tech.toLowerCase()
+          )
+        : [...prev.technologies, tech];
+
+      return { ...prev, technologies };
+    });
+  }
+
+  function removeTech(tech) {
+    setForm((prev) => ({
+      ...prev,
+      technologies: prev.technologies.filter((item) => item !== tech),
+    }));
+  }
+
+  // For anything not in the known list — e.g. a niche library.
+  function handleAddCustomTech() {
+    const value = customTech.trim();
+    if (!value) return;
+
+    const alreadyAdded = form.technologies.some(
+      (item) => item.toLowerCase() === value.toLowerCase()
+    );
+
+    if (!alreadyAdded) {
+      setForm((prev) => ({
+        ...prev,
+        technologies: [...prev.technologies, value],
+      }));
+    }
+
+    setCustomTech("");
+  }
+
+  function handleCustomTechKeyDown(e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddCustomTech();
+    }
   }
 
   // ========================================
@@ -83,25 +183,20 @@ export default function ProjectsForm({
       return;
     }
 
-    if (!form.technologies.trim()) {
-      alert("Please enter technologies.");
+    if (form.technologies.length === 0) {
+      alert("Please select at least one technology.");
       return;
     }
 
     try {
       setSaving(true);
 
-      const technologies = form.technologies
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean);
-
       const projectData = {
         title: form.title.trim(),
         year: String(form.year).trim(),
         category: form.category || "web",
         description: form.description.trim(),
-        technologies,
+        technologies: form.technologies,
         github: form.github.trim(),
         order: Number(form.order) || 1,
       };
@@ -125,7 +220,7 @@ export default function ProjectsForm({
         year: "2026",
         category: "web",
         description: "",
-        technologies: "",
+        technologies: [],
         github: "",
         order: "",
       });
@@ -223,19 +318,118 @@ export default function ProjectsForm({
         />
       </div>
 
-      {/* TECHNOLOGIES */}
+      {/* TECHNOLOGIES — click to select instead of typing, so
+          there's no spelling mistake or case mismatch */}
       <div>
         <label className={labelClasses}>Technologies</label>
-        <input
-          type="text"
-          name="technologies"
-          value={form.technologies}
-          onChange={handleChange}
-          placeholder="Python, SQL, Excel, Power BI"
-          className={inputClasses}
-        />
+
+        {/* SELECTED CHIPS */}
+        {form.technologies.length > 0 && (
+          <div className="mb-2.5 flex flex-wrap gap-1.5 rounded-lg border border-slate-700 bg-slate-800/40 p-2.5">
+            {form.technologies.map((tech) => (
+              <span
+                key={tech}
+                className="flex items-center gap-1.5 rounded-full border border-blue-400/40
+                  bg-blue-500/10 py-1 pl-2.5 pr-1.5 text-[11px] text-blue-300"
+              >
+                {tech}
+                <button
+                  type="button"
+                  onClick={() => removeTech(tech)}
+                  aria-label={`Remove ${tech}`}
+                  className="flex h-3.5 w-3.5 items-center justify-center rounded-full text-blue-300/70 transition hover:text-white"
+                >
+                  <svg viewBox="0 0 24 24" className="h-3 w-3 fill-none stroke-current stroke-[3]">
+                    <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* PICKER — known technologies, click to toggle. Wrapped as
+            one cohesive card: chip grid on top, a footer bar attached
+            to the bottom toggles how much is visible. Collapsed height
+            scales with screen size — ~1 row on mobile, more rows as
+            the screen grows, fully open from lg upward. */}
+        <div className="overflow-hidden rounded-lg border border-slate-700 bg-slate-800/20">
+          <div
+            className={`flex flex-wrap gap-1.5 p-2.5 transition-[max-height] duration-200 overflow-hidden
+              ${
+                showAllTech
+                  ? "max-h-none"
+                  : "max-h-[46px] sm:max-h-[86px] md:max-h-[126px] lg:max-h-none"
+              }`}
+          >
+            {KNOWN_TECHNOLOGIES.map((tech) => {
+              const isSelected = form.technologies.some(
+                (item) => item.toLowerCase() === tech.toLowerCase()
+              );
+
+              return (
+                <button
+                  key={tech}
+                  type="button"
+                  onClick={() => toggleTech(tech)}
+                  aria-pressed={isSelected}
+                  className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium transition
+                    ${
+                      isSelected
+                        ? "border-blue-500 bg-blue-500/20 text-blue-300"
+                        : "border-slate-700 bg-slate-800/60 text-gray-400 hover:border-slate-600 hover:text-gray-200"
+                    }`}
+                >
+                  {tech}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* FOOTER TOGGLE BAR — attached to the card, only needed
+              where the picker can be collapsed (lg+ is always open) */}
+          <button
+            type="button"
+            onClick={() => setShowAllTech((prev) => !prev)}
+            aria-expanded={showAllTech}
+            className="flex w-full items-center justify-center gap-1.5 border-t border-slate-700
+              bg-slate-800/40 py-2 text-[11px] font-medium text-gray-300 transition
+              hover:bg-slate-800/70 hover:text-blue-400 lg:hidden"
+          >
+            {showAllTech ? "Show less" : `Show all technologies (${KNOWN_TECHNOLOGIES.length})`}
+            <svg
+              viewBox="0 0 24 24"
+              className={`h-3 w-3 fill-none stroke-current stroke-[3] transition-transform duration-200 ${
+                showAllTech ? "rotate-180" : ""
+              }`}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+        </div>
+
+        {/* CUSTOM TECH — for anything not in the list above */}
+        <div className="mt-2 flex gap-2">
+          <input
+            type="text"
+            value={customTech}
+            onChange={(e) => setCustomTech(e.target.value)}
+            onKeyDown={handleCustomTechKeyDown}
+            placeholder="Not in the list? Type here..."
+            className={inputClasses}
+          />
+          <button
+            type="button"
+            onClick={handleAddCustomTech}
+            className="shrink-0 rounded-lg border border-slate-700 bg-slate-800/60 px-4 text-sm
+              font-medium text-gray-300 transition hover:border-blue-500/40 hover:text-blue-400"
+          >
+            Add
+          </button>
+        </div>
+
         <p className="mt-1 text-[11px] text-gray-600">
-          Separate technologies using commas.
+          Click a tag above to add or remove it. Use the box for anything not listed.
         </p>
       </div>
 

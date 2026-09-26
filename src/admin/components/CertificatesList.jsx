@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { getCertificates, deleteCertificate } from "../../firebase/firestore";
 import { deleteCertificateFile } from "../../firebase/storage";
@@ -46,6 +46,55 @@ function getTagColors(tag) {
 }
 
 // ======================================================
+// CERTIFICATE TYPE — same values/colors as ProjectsList's
+// category, so both admin pages feel consistent.
+// ======================================================
+
+function getTypeLabel(category) {
+  switch (category) {
+    case "web":
+      return "Web Development";
+    case "app":
+      return "App Development";
+    case "analytics":
+      return "Data Analyst";
+    default:
+      return category || "Other";
+  }
+}
+
+function getTypeColors(category) {
+  switch (category) {
+    case "web":
+      return {
+        badge: "bg-blue-500/10 text-blue-400",
+        accent: "bg-blue-400/80",
+        dot: "bg-blue-400",
+      };
+    case "app":
+      return {
+        badge: "bg-emerald-500/10 text-emerald-400",
+        accent: "bg-emerald-400/80",
+        dot: "bg-emerald-400",
+      };
+    case "analytics":
+      return {
+        badge: "bg-purple-500/10 text-purple-400",
+        accent: "bg-purple-400/80",
+        dot: "bg-purple-400",
+      };
+    // Certificates saved before the type field existed have no
+    // category — shown as "Other" with a blue accent, same as Projects.
+    default:
+      return {
+        badge: "bg-slate-500/15 text-slate-400",
+        accent: "bg-blue-400/80",
+        dot: "bg-slate-400",
+      };
+  }
+}
+
+// ======================================================
 // COMPONENT
 // ======================================================
 
@@ -54,6 +103,11 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState("");
+
+  // TYPE FILTER — same dropdown pattern as ProjectsList
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef(null);
 
   // ======================================================
   // LOAD CERTIFICATES
@@ -81,6 +135,30 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
   useEffect(() => {
     loadCertificates();
   }, [refresh]);
+
+  // ======================================================
+  // FILTER DROPDOWN — close on outside click / Escape
+  // ======================================================
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (filterRef.current && !filterRef.current.contains(e.target)) {
+        setFilterOpen(false);
+      }
+    }
+
+    function handleEscape(e) {
+      if (e.key === "Escape") setFilterOpen(false);
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
 
   // ======================================================
   // DELETE CERTIFICATE
@@ -143,6 +221,25 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
     );
   }
 
+  const filterTabs = [
+    { id: "all", label: "All Certificates" },
+    { id: "web", label: "Web Development" },
+    { id: "app", label: "App Development" },
+    { id: "analytics", label: "Data Analyst" },
+    { id: "other", label: "Other" },
+  ];
+
+  const knownCategories = ["web", "app", "analytics"];
+
+  const filteredCertificates =
+    activeFilter === "all"
+      ? certificates
+      : activeFilter === "other"
+        ? certificates.filter((c) => !knownCategories.includes(c.category))
+        : certificates.filter((c) => c.category === activeFilter);
+
+  const activeTab = filterTabs.find((tab) => tab.id === activeFilter);
+
   // ======================================================
   // UI
   // ======================================================
@@ -165,6 +262,114 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
         </span>
       </div>
 
+      {/* TYPE FILTER — custom dropdown with a color dot per type,
+          same pattern as ProjectsList */}
+      <div className="relative z-20 mb-4 sm:max-w-xs" ref={filterRef}>
+        <button
+          type="button"
+          onClick={() => setFilterOpen((prev) => !prev)}
+          aria-haspopup="listbox"
+          aria-expanded={filterOpen}
+          className={`flex w-full items-center justify-between gap-2 rounded-lg border bg-slate-800/60
+            px-3.5 py-2.5 text-left text-sm text-white outline-none transition
+            ${filterOpen ? "border-blue-500 ring-1 ring-blue-500/30" : "border-slate-700 hover:border-slate-600"}`}
+        >
+          <span className="flex min-w-0 items-center gap-2.5">
+            {activeFilter === "all" ? (
+              <svg
+                viewBox="0 0 24 24"
+                className="h-4 w-4 shrink-0 fill-none stroke-current stroke-2 text-gray-400"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 5h16l-6 7v6l-4 2v-8L4 5z" />
+              </svg>
+            ) : (
+              <span
+                className={`h-2.5 w-2.5 shrink-0 rounded-full ${getTypeColors(
+                  activeFilter === "other" ? undefined : activeFilter
+                ).dot}`}
+              />
+            )}
+            <span className="truncate">{activeTab?.label}</span>
+          </span>
+
+          <svg
+            viewBox="0 0 24 24"
+            className={`h-4 w-4 shrink-0 fill-none stroke-current stroke-2 text-gray-400 transition-transform duration-200 ${
+              filterOpen ? "rotate-180" : ""
+            }`}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
+
+        {filterOpen && (
+          <div
+            role="listbox"
+            className="absolute left-0 right-0 top-[calc(100%+6px)] overflow-hidden rounded-lg
+              border border-slate-700 bg-[#182233] shadow-xl shadow-black/40"
+          >
+            {filterTabs.map((tab) => {
+              const count =
+                tab.id === "all"
+                  ? certificates.length
+                  : tab.id === "other"
+                    ? certificates.filter((c) => !knownCategories.includes(c.category)).length
+                    : certificates.filter((c) => c.category === tab.id).length;
+
+              const isActive = tab.id === activeFilter;
+
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="option"
+                  aria-selected={isActive}
+                  onClick={() => {
+                    setActiveFilter(tab.id);
+                    setFilterOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between gap-2 px-3.5 py-2.5 text-left text-sm
+                    transition border-b border-slate-800/70 last:border-b-0
+                    ${isActive ? "bg-blue-500/15 text-blue-400" : "text-gray-300 hover:bg-slate-800/80"}`}
+                >
+                  <span className="flex min-w-0 items-center gap-2.5">
+                    {tab.id === "all" ? (
+                      <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center">
+                        {isActive && (
+                          <svg
+                            viewBox="0 0 24 24"
+                            className="h-3.5 w-3.5 fill-none stroke-current stroke-[3]"
+                          >
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                      </span>
+                    ) : (
+                      <span
+                        className={`h-2.5 w-2.5 shrink-0 rounded-full ${getTypeColors(
+                          tab.id === "other" ? undefined : tab.id
+                        ).dot}`}
+                      />
+                    )}
+                    <span className="truncate">{tab.label}</span>
+                  </span>
+
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                      isActive
+                        ? "bg-blue-500/20 text-blue-300"
+                        : "bg-slate-700/60 text-gray-400"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* ERROR */}
       {error && (
         <div className="mb-3 rounded-lg border border-red-500/25 bg-red-500/10 px-3.5 py-2.5 text-xs text-red-400">
@@ -173,36 +378,45 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
       )}
 
       {/* EMPTY STATE */}
-      {certificates.length === 0 ? (
+      {filteredCertificates.length === 0 ? (
         <div className="rounded-xl border border-slate-800 bg-[#111827] p-8 text-center">
           <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-base text-blue-400">
             +
           </div>
           <h4 className="mt-3 text-sm font-semibold text-white">
-            No certificates yet
+            {certificates.length === 0 ? "No certificates yet" : "No certificates in this category"}
           </h4>
           <p className="mt-1 text-xs text-gray-500">
-            Add your first certificate using the form above.
+            {certificates.length === 0
+              ? "Add your first certificate using the form above."
+              : "Try a different filter or add a new certificate above."}
           </p>
         </div>
       ) : (
         /* CERTIFICATE LIST — slim cards (Skills-style) */
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {certificates.map((certificate) => {
+          {filteredCertificates.map((certificate) => {
             const isDeleting = deletingId === certificate.id;
             const tags = getTags(certificate.tags);
+            const typeColors = getTypeColors(certificate.category);
 
             return (
               <div
                 key={certificate.id}
-                className="flex flex-col rounded-lg border border-slate-800 bg-[#111827] p-3.5 transition hover:border-slate-700"
+                className="relative flex flex-col overflow-hidden rounded-lg border border-slate-800 bg-[#111827] py-3.5 pl-4 pr-3.5 transition hover:border-slate-700"
               >
+                {/* Type accent strip — same idea as Projects cards,
+                    so certificate type is readable at a glance */}
+                <span
+                  className={`absolute inset-y-0 left-0 w-[3px] rounded-l-lg ${typeColors.accent}`}
+                />
+
                 {/* TITLE */}
                 <p className="truncate text-sm font-semibold text-white">
                   {certificate.title}
                 </p>
 
-                {/* COMPANY + YEAR (left, grouped) — ICON ACTIONS (right) — same row */}
+                {/* COMPANY + YEAR + TYPE (left, grouped) — ICON ACTIONS (right) — same row */}
                 <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                     {certificate.company && (
@@ -216,6 +430,12 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
                         {certificate.year}
                       </span>
                     )}
+
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${typeColors.badge}`}
+                    >
+                      {getTypeLabel(certificate.category)}
+                    </span>
                   </div>
 
                   <div className="flex shrink-0 gap-1.5">

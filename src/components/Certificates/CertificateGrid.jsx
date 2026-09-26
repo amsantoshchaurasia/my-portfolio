@@ -1,101 +1,50 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { FiStar, FiFilter, FiChevronDown, FiCheck } from "react-icons/fi";
 
 import CertificateCard from "./CertificateCard";
 import { getCertificates } from "../../firebase/firestore";
-
-// ======================================================
-// FILTER SETUP
-// ======================================================
-
-// Order of the filter tabs. Tabs with 0 certificates are hidden automatically.
-// "Forage" is matched on the company field; the rest are matched on tags.
-const TAG_FILTERS = [
-  "Data Analytics",
-  "Web Development",
-  "Python",
-  "SQL",
-  "Power BI",
-  "Excel",
-];
-
-// ======================================================
-// HELPERS
-// ======================================================
-
-// Featured = no type, or type is major / Featured.
-const isFeatured = (certificate) =>
-  !certificate.type ||
-  ["major", "Major", "Featured", "featured"].includes(certificate.type);
+import { CERTIFICATE_CATEGORIES, matchesCertificateCategory } from "./certificateTypeUtils";
 
 const byOrder = (a, b) => Number(a.order || 1) - Number(b.order || 1);
 
-// "Power BI", "power-bi", "PowerBI" all become "powerbi"
-const normalize = (value) =>
-  String(value || "")
-    .toLowerCase()
-    .replace(/[\s\-_.]/g, "");
-
-// Accepts an array or a comma-separated string, returns a clean array.
-const normalizeTags = (raw) => {
+function normalizeTags(raw) {
   if (!raw) return [];
-
   const list = Array.isArray(raw) ? raw : String(raw).split(",");
-
-  const seen = new Set();
-  return list
-    .map((tag) => String(tag).trim())
-    .filter((tag) => {
-      const key = normalize(tag);
-      if (!tag || seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-};
-
-const hasTag = (certificate, label) =>
-  certificate._tags.some((tag) => normalize(tag) === normalize(label));
-
-// ======================================================
-// COMPONENT
-// ======================================================
+  return list.map((tag) => String(tag).trim()).filter(Boolean);
+}
 
 export default function CertificateGrid() {
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  // Opens on "Featured" by default (falls back to "All" if nothing is featured)
-  const [filter, setFilter] = useState("featured");
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef(null);
 
-  // Close the filter dropdown on outside click / Escape
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef(null);
+
+  const filterOptions = [{ value: "all", label: "All Certificates" }, ...CERTIFICATE_CATEGORIES];
+  const activeOption = filterOptions.find((option) => option.value === activeFilter);
+
+  // FILTER DROPDOWN — close on outside click / Escape
   useEffect(() => {
-    if (!menuOpen) return;
-
-    const onClick = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setMenuOpen(false);
+    function handleClickOutside(e) {
+      if (filterRef.current && !filterRef.current.contains(e.target)) {
+        setFilterOpen(false);
       }
-    };
-    const onKey = (event) => {
-      if (event.key === "Escape") setMenuOpen(false);
-    };
-
-    document.addEventListener("mousedown", onClick);
-    document.addEventListener("keydown", onKey);
-
+    }
+    function handleEscape(e) {
+      if (e.key === "Escape") setFilterOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
     return () => {
-      document.removeEventListener("mousedown", onClick);
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
     };
-  }, [menuOpen]);
+  }, []);
 
-  // ======================================================
-  // LOAD ALL CERTIFICATES (single fetch)
-  // ======================================================
-
+  // LOAD CERTIFICATES
   useEffect(() => {
     let mounted = true;
 
@@ -105,20 +54,14 @@ export default function CertificateGrid() {
         setError("");
 
         const data = await getCertificates();
-
         if (!mounted) return;
 
         const prepared = data
           .map((certificate) => ({
             ...certificate,
             _tags: normalizeTags(certificate.tags),
-            _featured: isFeatured(certificate),
           }))
-          // Featured first, then by order
-          .sort((a, b) => {
-            const diff = Number(b._featured) - Number(a._featured);
-            return diff !== 0 ? diff : byOrder(a, b);
-          });
+          .sort(byOrder);
 
         setCertificates(prepared);
       } catch (err) {
@@ -130,241 +73,166 @@ export default function CertificateGrid() {
     }
 
     loadCertificates();
-
     return () => {
       mounted = false;
     };
   }, []);
 
-  // ======================================================
-  // TABS
-  // ======================================================
-
-  const tabs = useMemo(() => {
-    // Any tag you add in admin that isn't in TAG_FILTERS still gets a tab.
-    const known = new Set(TAG_FILTERS.map(normalize));
-    const extras = [];
-
-    certificates.forEach((certificate) => {
-      certificate._tags.forEach((tag) => {
-        const key = normalize(tag);
-        if (!known.has(key)) {
-          known.add(key);
-          extras.push(tag);
-        }
-      });
+  // ONLY SHOW FILTER OPTIONS THAT ACTUALLY EXIST IN ADMIN DATA
+  const availableFilterOptions = useMemo(() => {
+    return filterOptions.filter((option) => {
+      if (option.value === "all") return true;
+      return certificates.some((c) => matchesCertificateCategory(c, option.value));
     });
-
-    const all = [
-      { id: "all", label: "All", test: () => true },
-      {
-        id: "featured",
-        label: "Featured",
-        star: true,
-        test: (c) => c._featured,
-      },
-      {
-        id: "forage",
-        label: "Forage",
-        test: (c) => normalize(c.company) === "forage",
-      },
-      ...[...TAG_FILTERS, ...extras].map((label) => ({
-        id: `tag:${normalize(label)}`,
-        label,
-        tag: label,
-        test: (c) => hasTag(c, label),
-      })),
-      {
-        id: "other",
-        label: "Other",
-        test: (c) => !c._featured,
-      },
-    ];
-
-    return all
-      .map((tab) => ({
-        ...tab,
-        count: certificates.filter(tab.test).length,
-      }))
-      .filter((tab) => tab.id === "all" || tab.count > 0);
   }, [certificates]);
 
-  // ======================================================
-  // VISIBLE LIST
-  // ======================================================
+  // FILTERED + SEARCHED LIST (title + company + tags)
+  const filteredCertificates = useMemo(() => {
+    const categoryFiltered = certificates.filter((certificate) =>
+      matchesCertificateCategory(certificate, activeFilter)
+    );
 
-  const currentTab = tabs.find((tab) => tab.id === filter) || tabs[0];
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return categoryFiltered;
 
-  const visible = currentTab
-    ? certificates.filter(currentTab.test)
-    : certificates;
+    return categoryFiltered.filter((certificate) => {
+      const titleMatch = (certificate.title || "").toLowerCase().includes(query);
+      const companyMatch = (certificate.company || "").toLowerCase().includes(query);
+      const tagMatch = certificate._tags.some((tag) =>
+        (tag || "").toLowerCase().includes(query)
+      );
 
-  // "All" and "Featured" are always visible; the rest live in the dropdown.
-  const primaryTabs = tabs.filter(
-    (tab) => tab.id === "all" || tab.id === "featured"
-  );
-  const dropdownTabs = tabs.filter(
-    (tab) => tab.id !== "all" && tab.id !== "featured"
-  );
-  const dropdownActive = dropdownTabs.find((tab) => tab.id === currentTab?.id);
+      return titleMatch || companyMatch || tagMatch;
+    });
+  }, [certificates, activeFilter, searchQuery]);
 
-  // ======================================================
-  // UI
-  // Size 1 (375x667) = base classes -> LOCKED, not changed.
-  // Size 2 (640x900)  = sm: classes  -> updated.
-  // ======================================================
+  // LOADING
+  if (loading) {
+    return (
+      <div className="mt-6 sm:mt-6 md:mt-8 lg:mt-8 grid gap-4 sm:gap-4 md:gap-5 xl:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3].map((item) => (
+          <div
+            key={item}
+            className="h-[150px] sm:h-[150px] md:h-[170px] xl:h-[180px] 2xl:h-[170px] animate-pulse rounded-xl sm:rounded-2xl border border-slate-800 bg-slate-900/70"
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="mt-6 sm:mt-6 md:mt-8 lg:mt-8">
-      {/* FILTERS */}
-      {!loading && !error && certificates.length > 0 && tabs.length > 1 && (
-        <div className="mb-6 sm:mb-8 md:mb-10 xl:mb-12 flex flex-wrap items-center justify-center gap-2 md:gap-3">
-          {/* ALL + FEATURED */}
-          {primaryTabs.map((tab) => {
-            const active = currentTab?.id === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setFilter(tab.id);
-                  setMenuOpen(false);
-                }}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 sm:px-3.5 md:px-4 lg:px-5 xl:px-6 2xl:px-7 py-1.5 md:py-2 lg:py-2.5 xl:py-3 2xl:py-3.5 text-[13px] sm:text-sm xl:text-[15px] 2xl:text-base font-medium transition-colors duration-200 ${
-                  active
-                    ? "border-blue-500 bg-blue-500/15 text-blue-400"
-                    : "border-slate-700 bg-slate-900/60 text-gray-400 hover:border-slate-600 hover:text-white"
-                }`}
-              >
-                {tab.star && <FiStar size={13} />}
-                {tab.label}
-                <span
-                  className={`rounded-full px-1.5 text-xs ${
-                    active
-                      ? "bg-blue-500/20 text-blue-300"
-                      : "bg-slate-800 text-gray-500"
-                  }`}
-                >
-                  {tab.count}
-                </span>
-              </button>
-            );
-          })}
+      {/* ========================================
+          SEARCH + FILTER
+      ======================================== */}
+      <div className="mx-auto flex max-w-2xl flex-col gap-3 sm:flex-row">
+        {/* SEARCH */}
+        <div className="relative flex-1">
+          <svg
+            viewBox="0 0 24 24"
+            className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 fill-none stroke-current stroke-2 text-gray-500"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path strokeLinecap="round" d="M21 21l-4.3-4.3" />
+          </svg>
 
-          {/* FILTER DROPDOWN */}
-          {dropdownTabs.length > 0 && (
-            <div ref={menuRef} className="relative">
-              <button
-                onClick={() => setMenuOpen((open) => !open)}
-                aria-haspopup="listbox"
-                aria-expanded={menuOpen}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 sm:px-3.5 md:px-4 lg:px-5 xl:px-6 2xl:px-7 py-1.5 md:py-2 lg:py-2.5 xl:py-3 2xl:py-3.5 text-[13px] sm:text-sm xl:text-[15px] 2xl:text-base font-medium transition-colors duration-200 ${
-                  dropdownActive
-                    ? "border-blue-500 bg-blue-500/15 text-blue-400"
-                    : "border-slate-700 bg-slate-900/60 text-gray-400 hover:border-slate-600 hover:text-white"
-                }`}
-              >
-                <FiFilter size={13} />
-                {dropdownActive ? dropdownActive.label : "Filter"}
-                {dropdownActive && (
-                  <span className="rounded-full bg-blue-500/20 px-1.5 text-xs text-blue-300">
-                    {dropdownActive.count}
-                  </span>
-                )}
-                <FiChevronDown
-                  size={14}
-                  className={`transition-transform duration-200 ${
-                    menuOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search certificates..."
+            className="w-full rounded-full border border-slate-700 bg-[#111827] py-2.5 sm:py-3 pl-11 pr-4
+              text-sm sm:text-base text-white placeholder:text-gray-500 outline-none transition
+              focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30"
+          />
+        </div>
 
-              {menuOpen && (
-                <div
-                  role="listbox"
-                  className="absolute right-0 z-20 mt-2 max-h-72 w-52 overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 py-1.5 shadow-[0_15px_40px_rgba(0,0,0,0.5)] sm:left-1/2 sm:right-auto sm:w-56 sm:-translate-x-1/2"
-                >
-                  {dropdownTabs.map((tab) => {
-                    const active = currentTab?.id === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        role="option"
-                        aria-selected={active}
-                        onClick={() => {
-                          setFilter(tab.id);
-                          setMenuOpen(false);
-                        }}
-                        className={`flex w-full items-center justify-between gap-3 px-4 py-2 text-left text-sm transition-colors ${
-                          active
-                            ? "bg-blue-500/10 text-blue-400"
-                            : "text-gray-300 hover:bg-white/5 hover:text-white"
-                        }`}
-                      >
-                        <span className="inline-flex items-center gap-2">
-                          {active ? (
-                            <FiCheck size={14} />
-                          ) : (
-                            <span className="w-[14px]" />
-                          )}
-                          {tab.label}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {tab.count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+        {/* CATEGORY FILTER */}
+        <div className="relative z-20 sm:w-56" ref={filterRef}>
+          <button
+            type="button"
+            onClick={() => setFilterOpen((prev) => !prev)}
+            aria-haspopup="listbox"
+            aria-expanded={filterOpen}
+            className={`flex w-full items-center justify-between gap-2 rounded-full border bg-[#111827]
+              py-2.5 sm:py-3 pl-4 pr-3.5 text-left text-sm sm:text-base text-white outline-none transition
+              ${filterOpen ? "border-blue-500 ring-1 ring-blue-500/30" : "border-slate-700 hover:border-slate-600"}`}
+          >
+            <span className="truncate">{activeOption?.label}</span>
+            <svg
+              viewBox="0 0 24 24"
+              className={`h-4 w-4 shrink-0 fill-none stroke-current stroke-2 text-gray-400 transition-transform duration-200 ${
+                filterOpen ? "rotate-180" : ""
+              }`}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+
+          {filterOpen && (
+            <div
+              role="listbox"
+              className="absolute left-0 right-0 top-[calc(100%+6px)] overflow-hidden rounded-xl
+                border border-slate-700 bg-[#111827] shadow-xl shadow-black/40"
+            >
+              {availableFilterOptions.map((option) => {
+                const isActive = option.value === activeFilter;
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="option"
+                    aria-selected={isActive}
+                    onClick={() => {
+                      setActiveFilter(option.value);
+                      setFilterOpen(false);
+                    }}
+                    className={`block w-full border-b border-slate-800/70 px-4 py-2.5 text-left text-sm sm:text-base
+                      transition last:border-b-0
+                      ${isActive ? "bg-blue-500/15 text-blue-400" : "text-gray-300 hover:bg-slate-800/80"}`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
-      )}
-
-      {/* LOADING */}
-      {loading && (
-        <div className="grid gap-4 sm:gap-4 md:gap-5 xl:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((item) => (
-            <div
-              key={item}
-              className="h-[130px] sm:h-[130px] md:h-[150px] xl:h-[160px] 2xl:h-[150px] animate-pulse rounded-xl sm:rounded-2xl border border-slate-800 bg-slate-900/70"
-            />
-          ))}
-        </div>
-      )}
+      </div>
 
       {/* ERROR */}
-      {!loading && error && (
-        <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center">
+      {error && (
+        <div className="mt-8 sm:mt-10 rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center">
           <p className="text-sm sm:text-base text-red-400">{error}</p>
         </div>
       )}
 
       {/* EMPTY */}
-      {!loading && !error && visible.length === 0 && (
-        <div className="rounded-xl sm:rounded-2xl border border-slate-800 bg-slate-900/60 p-6 text-center">
+      {!error && filteredCertificates.length === 0 && (
+        <div className="mt-8 sm:mt-10 rounded-xl sm:rounded-2xl border border-slate-800 bg-slate-900/60 p-6 text-center">
           <p className="text-sm sm:text-base text-gray-500">
-            No certificates available.
+            {certificates.length === 0
+              ? "No certificates available."
+              : "No certificates match your search or filter."}
           </p>
         </div>
       )}
 
-      {/* GRID */}
-      {!loading && !error && visible.length > 0 && (
+      {/* GRID — same responsive grid as Projects (sm:2 cols, lg:3 cols) */}
+      {!error && filteredCertificates.length > 0 && (
         <motion.div
-          key={currentTab?.id}
+          key={activeFilter}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="grid items-stretch gap-4 sm:gap-4 md:gap-5 xl:gap-6 sm:auto-rows-fr sm:grid-cols-2 lg:grid-cols-3"
+          className="mt-6 sm:mt-6 md:mt-8 grid items-stretch gap-4 sm:gap-4 md:gap-5 xl:gap-6 sm:auto-rows-fr sm:grid-cols-2 lg:grid-cols-3"
         >
-          {visible.map((certificate) => (
+          {filteredCertificates.map((certificate) => (
             <CertificateCard
               key={certificate.id}
               certificate={certificate}
               tags={certificate._tags}
-              featured={certificate._featured}
-              activeTag={currentTab?.tag || ""}
             />
           ))}
         </motion.div>
