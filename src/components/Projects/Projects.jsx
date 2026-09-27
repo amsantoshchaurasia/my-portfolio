@@ -80,6 +80,19 @@ export default function Projects() {
   }, []);
 
   // ========================================
+  // ONLY SHOW FILTER OPTIONS THAT ACTUALLY EXIST IN ADMIN DATA
+  // "All Projects" always shows; a category only appears once at
+  // least one project has been added with that category.
+  // ========================================
+
+  const availableFilterOptions = useMemo(() => {
+    return filterOptions.filter((option) => {
+      if (option.value === "all") return true;
+      return projects.some((project) => matchesCategory(project, option.value));
+    });
+  }, [projects]);
+
+  // ========================================
   // FILTERED PROJECTS — category filter first, then search
   // ========================================
 
@@ -190,7 +203,8 @@ export default function Projects() {
             </div>
 
             {/* CATEGORY FILTER — custom dropdown (styled to match
-                the site's dark theme instead of the default browser select) */}
+                the site's dark theme instead of the default browser select).
+                Only lists categories that have at least one project. */}
             <div className="relative z-20 sm:w-56" ref={filterRef}>
               <button
                 type="button"
@@ -218,7 +232,7 @@ export default function Projects() {
                   className="absolute left-0 right-0 top-[calc(100%+6px)] overflow-hidden rounded-xl
                     border border-slate-700 bg-[#111827] shadow-xl shadow-black/40"
                 >
-                  {filterOptions.map((option) => {
+                  {availableFilterOptions.map((option) => {
                     const isActive = option.value === activeFilter;
 
                     return (

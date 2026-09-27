@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 
 import { getProjects, deleteProject } from "../../firebase/firestore";
+import { getTechColor } from "../../utils/colors/techColors";
+import {
+  PROJECT_TYPE_FILTER_OPTIONS,
+  KNOWN_PROJECT_TYPE_VALUES,
+  getProjectTypeLabel as getTypeLabel,
+  getProjectTypeColors as getTypeColors,
+} from "../../utils/colors/typeColors";
 
 export default function ProjectsList({ refresh, onEditProject }) {
   // ========================================
@@ -88,125 +95,6 @@ export default function ProjectsList({ refresh, onEditProject }) {
   }
 
   // ========================================
-  // CATEGORY HELPERS — same color scheme as Skills, so the
-  // two management pages feel consistent
-  // ========================================
-
-  function getCategoryLabel(category) {
-    switch (category) {
-      case "web":
-        return "Web Development";
-      case "app":
-        return "App Development";
-      case "analytics":
-        return "Data Analyst";
-      default:
-        return category || "Other";
-    }
-  }
-
-  function getCategoryColors(category) {
-    switch (category) {
-      case "web":
-        return {
-          badge: "bg-blue-500/10 text-blue-400",
-          accent: "bg-blue-400/80",
-          dot: "bg-blue-400",
-        };
-      case "app":
-        return {
-          badge: "bg-emerald-500/10 text-emerald-400",
-          accent: "bg-emerald-400/80",
-          dot: "bg-emerald-400",
-        };
-      case "analytics":
-        return {
-          badge: "bg-purple-500/10 text-purple-400",
-          accent: "bg-purple-400/80",
-          dot: "bg-purple-400",
-        };
-      // Legacy projects saved before the "type" field existed have no
-      // category — shown as "Other". Accent strip is blue (same as
-      // the badge dot below) instead of neutral slate.
-      default:
-        return {
-          badge: "bg-slate-500/15 text-slate-400",
-          accent: "bg-blue-400/80",
-          dot: "bg-slate-400",
-        };
-    }
-  }
-
-  // ========================================
-  // TECHNOLOGY TAG COLORS
-  // Known technologies get a recognizable, brand-inspired color.
-  // Anything not in the list still gets a color — picked
-  // deterministically from its name, so the same tech always
-  // gets the same color and nothing stays plain blue by default.
-  // ========================================
-
-  const TECH_COLOR_MAP = {
-    python: "border-yellow-400/40 text-yellow-300",
-    sql: "border-orange-400/40 text-orange-300",
-    mysql: "border-orange-400/40 text-orange-300",
-    postgresql: "border-sky-400/40 text-sky-300",
-    excel: "border-green-400/40 text-green-300",
-    "power bi": "border-amber-400/40 text-amber-300",
-    powerbi: "border-amber-400/40 text-amber-300",
-    tableau: "border-rose-400/40 text-rose-300",
-    react: "border-cyan-400/40 text-cyan-300",
-    "react native": "border-cyan-400/40 text-cyan-300",
-    javascript: "border-yellow-300/40 text-yellow-200",
-    typescript: "border-blue-400/40 text-blue-300",
-    html: "border-orange-500/40 text-orange-400",
-    css: "border-blue-500/40 text-blue-400",
-    "tailwind css": "border-teal-400/40 text-teal-300",
-    tailwind: "border-teal-400/40 text-teal-300",
-    "node.js": "border-lime-400/40 text-lime-300",
-    nodejs: "border-lime-400/40 text-lime-300",
-    firebase: "border-amber-500/40 text-amber-400",
-    mongodb: "border-emerald-400/40 text-emerald-300",
-    java: "border-red-400/40 text-red-300",
-    "c++": "border-indigo-400/40 text-indigo-300",
-    git: "border-orange-400/40 text-orange-300",
-    github: "border-gray-300/40 text-gray-200",
-    numpy: "border-sky-400/40 text-sky-300",
-    pandas: "border-purple-400/40 text-purple-300",
-    "scikit-learn": "border-orange-400/40 text-orange-300",
-    django: "border-emerald-500/40 text-emerald-400",
-    flask: "border-gray-300/40 text-gray-200",
-    docker: "border-sky-400/40 text-sky-300",
-    figma: "border-pink-400/40 text-pink-300",
-  };
-
-  // Consistent fallback palette for any technology not listed above.
-  const TECH_FALLBACK_PALETTE = [
-    "border-blue-500/30 text-blue-400",
-    "border-fuchsia-400/40 text-fuchsia-300",
-    "border-teal-400/40 text-teal-300",
-    "border-red-400/40 text-red-300",
-    "border-indigo-400/40 text-indigo-300",
-    "border-lime-400/40 text-lime-300",
-  ];
-
-  function getTechColor(tech) {
-    const key = (tech || "").trim().toLowerCase();
-
-    if (TECH_COLOR_MAP[key]) {
-      return TECH_COLOR_MAP[key];
-    }
-
-    // Deterministic hash so the same unlisted tech name always
-    // lands on the same fallback color across renders/sessions.
-    let hash = 0;
-    for (let i = 0; i < key.length; i++) {
-      hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
-    }
-
-    return TECH_FALLBACK_PALETTE[hash % TECH_FALLBACK_PALETTE.length];
-  }
-
-  // ========================================
   // LOADING
   // ========================================
 
@@ -219,15 +107,18 @@ export default function ProjectsList({ refresh, onEditProject }) {
     );
   }
 
+  // Filter tabs are built from the shared PROJECT_TYPE_FILTER_OPTIONS
+  // list (typeColors.js), so adding a new project type there makes it
+  // show up here automatically — no need to touch this file again.
   const filterTabs = [
     { id: "all", label: "All Projects" },
-    { id: "web", label: "Web Development" },
-    { id: "app", label: "App Development" },
-    { id: "analytics", label: "Data Analyst" },
-    { id: "other", label: "Other" },
+    ...PROJECT_TYPE_FILTER_OPTIONS.map((option) => ({
+      id: option.value,
+      label: option.label,
+    })),
   ];
 
-  const knownCategories = ["web", "app", "analytics"];
+  const knownCategories = KNOWN_PROJECT_TYPE_VALUES;
 
   // Category filter applied first...
   const categoryFiltered =
@@ -336,7 +227,7 @@ export default function ProjectsList({ refresh, onEditProject }) {
                 </svg>
               ) : (
                 <span
-                  className={`h-2.5 w-2.5 shrink-0 rounded-full ${getCategoryColors(
+                  className={`h-2.5 w-2.5 shrink-0 rounded-full ${getTypeColors(
                     activeFilter === "other" ? undefined : activeFilter
                   ).dot}`}
                 />
@@ -398,7 +289,7 @@ export default function ProjectsList({ refresh, onEditProject }) {
                         </span>
                       ) : (
                         <span
-                          className={`h-2.5 w-2.5 shrink-0 rounded-full ${getCategoryColors(
+                          className={`h-2.5 w-2.5 shrink-0 rounded-full ${getTypeColors(
                             tab.id === "other" ? undefined : tab.id
                           ).dot}`}
                         />
@@ -442,7 +333,7 @@ export default function ProjectsList({ refresh, onEditProject }) {
         <div className="grid gap-2.5">
           {filteredProjects.map((project) => {
             const isDeleting = deletingId === project.id;
-            const categoryColors = getCategoryColors(project.category);
+            const categoryColors = getTypeColors(project.category);
 
             return (
               <div
@@ -471,7 +362,7 @@ export default function ProjectsList({ refresh, onEditProject }) {
                     <span
                       className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${categoryColors.badge}`}
                     >
-                      {getCategoryLabel(project.category)}
+                      {getTypeLabel(project.category)}
                     </span>
                   </div>
 

@@ -2,6 +2,13 @@ import { useEffect, useRef, useState } from "react";
 
 import { getCertificates, deleteCertificate } from "../../firebase/firestore";
 import { deleteCertificateFile } from "../../firebase/storage";
+import { getTechColor } from "../../utils/colors/techColors";
+import {
+  CERTIFICATE_TYPE_FILTER_OPTIONS,
+  KNOWN_CERTIFICATE_TYPE_VALUES,
+  getCertificateTypeLabel as getTypeLabel,
+  getCertificateTypeColors as getTypeColors,
+} from "../../utils/colors/typeColors";
 
 // Accepts an array or a comma-separated string, returns a clean array.
 function getTags(raw) {
@@ -10,88 +17,6 @@ function getTags(raw) {
   const list = Array.isArray(raw) ? raw : String(raw).split(",");
 
   return list.map((tag) => String(tag).trim()).filter(Boolean);
-}
-
-// ======================================================
-// TAG COLORS — every distinct tag text always gets the
-// same color (e.g. "SQL" is always cyan, "Web Development"
-// is always yellow), picked deterministically from a palette.
-// ======================================================
-
-const TAG_COLOR_PALETTE = [
-  { bg: "bg-purple-500/10", text: "text-purple-400" },
-  { bg: "bg-yellow-500/10", text: "text-yellow-400" },
-  { bg: "bg-green-500/10", text: "text-green-400" },
-  { bg: "bg-pink-500/10", text: "text-pink-400" },
-  { bg: "bg-orange-500/10", text: "text-orange-400" },
-  { bg: "bg-cyan-500/10", text: "text-cyan-400" },
-  { bg: "bg-indigo-500/10", text: "text-indigo-400" },
-  { bg: "bg-teal-500/10", text: "text-teal-400" },
-  { bg: "bg-rose-500/10", text: "text-rose-400" },
-  { bg: "bg-lime-500/10", text: "text-lime-400" },
-];
-
-function hashTag(tag) {
-  let hash = 0;
-  for (let i = 0; i < tag.length; i++) {
-    hash = tag.charCodeAt(i) + ((hash << 5) - hash);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-
-function getTagColors(tag) {
-  const index = hashTag(tag.trim().toLowerCase()) % TAG_COLOR_PALETTE.length;
-  return TAG_COLOR_PALETTE[index];
-}
-
-// ======================================================
-// CERTIFICATE TYPE — same values/colors as ProjectsList's
-// category, so both admin pages feel consistent.
-// ======================================================
-
-function getTypeLabel(category) {
-  switch (category) {
-    case "web":
-      return "Web Development";
-    case "app":
-      return "App Development";
-    case "analytics":
-      return "Data Analyst";
-    default:
-      return category || "Other";
-  }
-}
-
-function getTypeColors(category) {
-  switch (category) {
-    case "web":
-      return {
-        badge: "bg-blue-500/10 text-blue-400",
-        accent: "bg-blue-400/80",
-        dot: "bg-blue-400",
-      };
-    case "app":
-      return {
-        badge: "bg-emerald-500/10 text-emerald-400",
-        accent: "bg-emerald-400/80",
-        dot: "bg-emerald-400",
-      };
-    case "analytics":
-      return {
-        badge: "bg-purple-500/10 text-purple-400",
-        accent: "bg-purple-400/80",
-        dot: "bg-purple-400",
-      };
-    // Certificates saved before the type field existed have no
-    // category — shown as "Other" with a blue accent, same as Projects.
-    default:
-      return {
-        badge: "bg-slate-500/15 text-slate-400",
-        accent: "bg-blue-400/80",
-        dot: "bg-slate-400",
-      };
-  }
 }
 
 // ======================================================
@@ -221,15 +146,19 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
     );
   }
 
+  // Filter tabs are built from the shared CERTIFICATE_TYPE_FILTER_OPTIONS
+  // list (typeColors.js) — this is now its OWN independent list from
+  // Projects, so adding a new certificate type there makes it show up
+  // here automatically without touching this file again.
   const filterTabs = [
     { id: "all", label: "All Certificates" },
-    { id: "web", label: "Web Development" },
-    { id: "app", label: "App Development" },
-    { id: "analytics", label: "Data Analyst" },
-    { id: "other", label: "Other" },
+    ...CERTIFICATE_TYPE_FILTER_OPTIONS.map((option) => ({
+      id: option.value,
+      label: option.label,
+    })),
   ];
 
-  const knownCategories = ["web", "app", "analytics"];
+  const knownCategories = KNOWN_CERTIFICATE_TYPE_VALUES;
 
   const filteredCertificates =
     activeFilter === "all"
@@ -485,19 +414,19 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
                   </div>
                 </div>
 
-                {/* SKILL TAGS — each tag gets its own consistent color; space reserved so every card is the same height */}
+                {/* SKILL TAGS — same getTechColor as CertificatesForm & the
+                    public site, so a tag's color always matches everywhere
+                    (previously this used a separate hash palette that could
+                    mismatch the color shown in the form/public card) */}
                 <div className="mt-2 flex min-h-[24px] flex-wrap items-start gap-1.5">
-                  {tags.map((tag) => {
-                    const colors = getTagColors(tag);
-                    return (
-                      <span
-                        key={tag}
-                        className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${colors.bg} ${colors.text}`}
-                      >
-                        {tag}
-                      </span>
-                    );
-                  })}
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${getTechColor(tag)}`}
+                    >
+                      {tag}
+                    </span>
+                  ))}
                 </div>
               </div>
             );

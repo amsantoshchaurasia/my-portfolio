@@ -1,43 +1,112 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { createProject, updateProject } from "../../firebase/firestore";
+import { KNOWN_TECHNOLOGIES, getTechColor } from "../../utils/colors/techColors";
+import {
+  PROJECT_TYPE_FILTER_OPTIONS as TYPE_CATEGORIES,
+  getProjectTypeBadgeClasses as getTypeBadgeClasses,
+} from "../../utils/colors/typeColors";
+
+// How many technology chips are visible before "Show more" is needed.
+const TECH_PREVIEW_COUNT = 5;
 
 // ========================================
-// KNOWN TECHNOLOGIES — same names used in ProjectsList's color
-// map, so whatever gets picked here always renders with the
-// correct known color instead of falling back to a random one.
+// CUSTOM DROPDOWN — styled to match the public-side "All
+// Projects" filter (rounded pill button, dark panel, chevron
+// that rotates). Each option renders as its real category badge
+// color instead of a generic highlight, so what you pick here is
+// exactly what shows on the portfolio.
 // ========================================
 
-const KNOWN_TECHNOLOGIES = [
-  "Python",
-  "SQL",
-  "MySQL",
-  "PostgreSQL",
-  "Excel",
-  "Power BI",
-  "Tableau",
-  "React",
-  "React Native",
-  "JavaScript",
-  "TypeScript",
-  "HTML",
-  "CSS",
-  "Tailwind CSS",
-  "Node.js",
-  "Firebase",
-  "MongoDB",
-  "Java",
-  "C++",
-  "Git",
-  "GitHub",
-  "NumPy",
-  "Pandas",
-  "Scikit-learn",
-  "Django",
-  "Flask",
-  "Docker",
-  "Figma",
-];
+function SelectDropdown({ value, onChange, options, getBadgeClasses }) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef(null);
+
+  const selected = options.find((option) => option.value === value) || options[0];
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={`flex w-full items-center justify-between rounded-lg border bg-slate-800/60 px-3 py-2.5
+          text-sm outline-none transition
+          ${open ? "border-blue-500 ring-1 ring-blue-500/30" : "border-slate-700 hover:border-slate-600"}`}
+      >
+        {getBadgeClasses ? (
+          <span
+            className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${getBadgeClasses(selected?.value)}`}
+          >
+            {selected?.label}
+          </span>
+        ) : (
+          <span className="text-white">{selected?.label}</span>
+        )}
+        <svg
+          viewBox="0 0 24 24"
+          className={`h-4 w-4 flex-shrink-0 fill-none stroke-current stroke-[2.5] text-gray-400 transition-transform duration-200 ${
+            open ? "rotate-180" : ""
+          }`}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+
+      {open && (
+        <ul
+          role="listbox"
+          className="absolute z-20 mt-1.5 w-full overflow-hidden rounded-lg border border-slate-700
+            bg-[#0F1729] p-1.5 shadow-lg shadow-black/40"
+        >
+          {options.map((option) => {
+            const isSelected = option.value === value;
+            return (
+              <li key={option.value} role="option" aria-selected={isSelected}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm transition
+                    ${isSelected ? "bg-slate-800" : "hover:bg-slate-800/60"}`}
+                >
+                  {getBadgeClasses ? (
+                    <span
+                      className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${getBadgeClasses(option.value)}`}
+                    >
+                      {option.label}
+                    </span>
+                  ) : (
+                    <span className="text-gray-300">{option.label}</span>
+                  )}
+
+                  {isSelected && (
+                    <svg viewBox="0 0 24 24" className="h-4 w-4 flex-shrink-0 fill-none stroke-current stroke-[2.5] text-blue-400">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export default function ProjectsForm({
   onProjectAdded,
@@ -57,9 +126,8 @@ export default function ProjectsForm({
   const [customTech, setCustomTech] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Tech picker starts collapsed to just a row or two on small
-  // screens (see the responsive max-height below); "Show more"
-  // expands it fully at any size.
+  // Tech picker starts collapsed to a small preview row;
+  // "Show more" reveals the full list at any screen size.
   const [showAllTech, setShowAllTech] = useState(false);
 
   // ========================================
@@ -99,6 +167,7 @@ export default function ProjectsForm({
       });
     }
     setCustomTech("");
+    setShowAllTech(false);
   }, [editingProject]);
 
   // ========================================
@@ -108,6 +177,10 @@ export default function ProjectsForm({
   function handleChange(e) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  function handleCategoryChange(value) {
+    setForm((prev) => ({ ...prev, category: value }));
   }
 
   // ========================================
@@ -141,6 +214,8 @@ export default function ProjectsForm({
   }
 
   // For anything not in the known list — e.g. a niche library.
+  // Still gets a color, deterministically hashed from its name, so it
+  // looks consistent instead of always defaulting to one color.
   function handleAddCustomTech() {
     const value = customTech.trim();
     if (!value) return;
@@ -243,6 +318,12 @@ export default function ProjectsForm({
     "text-sm text-white placeholder:text-gray-500 outline-none transition " +
     "focus:border-blue-500 focus:bg-slate-800 focus:ring-1 focus:ring-blue-500/30";
 
+  const visibleTech = showAllTech
+    ? KNOWN_TECHNOLOGIES
+    : KNOWN_TECHNOLOGIES.slice(0, TECH_PREVIEW_COUNT);
+
+  const hiddenCount = KNOWN_TECHNOLOGIES.length - TECH_PREVIEW_COUNT;
+
   // ========================================
   // UI
   // ========================================
@@ -288,21 +369,16 @@ export default function ProjectsForm({
         </div>
       </div>
 
-      {/* CATEGORY / TYPE — new: lets projects be grouped and
-          filtered the same way Skills are (Web Development,
-          App Development, Data Analyst) */}
+      {/* CATEGORY / TYPE — custom dropdown, each option colored
+          exactly like its badge on the public portfolio */}
       <div className="sm:max-w-xs">
         <label className={labelClasses}>Project type</label>
-        <select
-          name="category"
+        <SelectDropdown
           value={form.category}
-          onChange={handleChange}
-          className={inputClasses}
-        >
-          <option value="web">Web Development</option>
-          <option value="app">App Development</option>
-          <option value="analytics">Data Analyst</option>
-        </select>
+          onChange={handleCategoryChange}
+          options={TYPE_CATEGORIES}
+          getBadgeClasses={getTypeBadgeClasses}
+        />
       </div>
 
       {/* DESCRIPTION */}
@@ -323,49 +399,45 @@ export default function ProjectsForm({
       <div>
         <label className={labelClasses}>Technologies</label>
 
-        {/* SELECTED CHIPS */}
+        {/* SELECTED CHIPS — each tag uses the exact same color it
+            has on the public portfolio, known or custom-typed */}
         {form.technologies.length > 0 && (
           <div className="mb-2.5 flex flex-wrap gap-1.5 rounded-lg border border-slate-700 bg-slate-800/40 p-2.5">
-            {form.technologies.map((tech) => (
-              <span
-                key={tech}
-                className="flex items-center gap-1.5 rounded-full border border-blue-400/40
-                  bg-blue-500/10 py-1 pl-2.5 pr-1.5 text-[11px] text-blue-300"
-              >
-                {tech}
-                <button
-                  type="button"
-                  onClick={() => removeTech(tech)}
-                  aria-label={`Remove ${tech}`}
-                  className="flex h-3.5 w-3.5 items-center justify-center rounded-full text-blue-300/70 transition hover:text-white"
+            {form.technologies.map((tech) => {
+              const colorClasses = getTechColor(tech);
+              return (
+                <span
+                  key={tech}
+                  className={`flex items-center gap-1.5 rounded-full border bg-white/5 py-1 pl-2.5 pr-1.5 text-[11px] ${colorClasses}`}
                 >
-                  <svg viewBox="0 0 24 24" className="h-3 w-3 fill-none stroke-current stroke-[3]">
-                    <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
-                  </svg>
-                </button>
-              </span>
-            ))}
+                  {tech}
+                  <button
+                    type="button"
+                    onClick={() => removeTech(tech)}
+                    aria-label={`Remove ${tech}`}
+                    className="flex h-3.5 w-3.5 items-center justify-center rounded-full opacity-70 transition hover:text-white hover:opacity-100"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-3 w-3 fill-none stroke-current stroke-[3]">
+                      <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                  </button>
+                </span>
+              );
+            })}
           </div>
         )}
 
-        {/* PICKER — known technologies, click to toggle. Wrapped as
-            one cohesive card: chip grid on top, a footer bar attached
-            to the bottom toggles how much is visible. Collapsed height
-            scales with screen size — ~1 row on mobile, more rows as
-            the screen grows, fully open from lg upward. */}
-        <div className="overflow-hidden rounded-lg border border-slate-700 bg-slate-800/20">
-          <div
-            className={`flex flex-wrap gap-1.5 p-2.5 transition-[max-height] duration-200 overflow-hidden
-              ${
-                showAllTech
-                  ? "max-h-none"
-                  : "max-h-[46px] sm:max-h-[86px] md:max-h-[126px] lg:max-h-none"
-              }`}
-          >
-            {KNOWN_TECHNOLOGIES.map((tech) => {
+        {/* PICKER — known technologies, click to toggle. Shows a
+            short preview (5 chips) by default; "+N more" expands
+            to the full list. Selected chips light up in their
+            real portfolio color. */}
+        <div className="rounded-lg border border-slate-700 bg-slate-800/20 p-2.5">
+          <div className="flex flex-wrap gap-1.5">
+            {visibleTech.map((tech) => {
               const isSelected = form.technologies.some(
                 (item) => item.toLowerCase() === tech.toLowerCase()
               );
+              const colorClasses = getTechColor(tech);
 
               return (
                 <button
@@ -376,7 +448,7 @@ export default function ProjectsForm({
                   className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium transition
                     ${
                       isSelected
-                        ? "border-blue-500 bg-blue-500/20 text-blue-300"
+                        ? `bg-white/5 ${colorClasses}`
                         : "border-slate-700 bg-slate-800/60 text-gray-400 hover:border-slate-600 hover:text-gray-200"
                     }`}
                 >
@@ -384,28 +456,19 @@ export default function ProjectsForm({
                 </button>
               );
             })}
-          </div>
 
-          {/* FOOTER TOGGLE BAR — attached to the card, only needed
-              where the picker can be collapsed (lg+ is always open) */}
-          <button
-            type="button"
-            onClick={() => setShowAllTech((prev) => !prev)}
-            aria-expanded={showAllTech}
-            className="flex w-full items-center justify-center gap-1.5 border-t border-slate-700
-              bg-slate-800/40 py-2 text-[11px] font-medium text-gray-300 transition
-              hover:bg-slate-800/70 hover:text-blue-400 lg:hidden"
-          >
-            {showAllTech ? "Show less" : `Show all technologies (${KNOWN_TECHNOLOGIES.length})`}
-            <svg
-              viewBox="0 0 24 24"
-              className={`h-3 w-3 fill-none stroke-current stroke-[3] transition-transform duration-200 ${
-                showAllTech ? "rotate-180" : ""
-              }`}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
-            </svg>
-          </button>
+            {hiddenCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowAllTech((prev) => !prev)}
+                aria-expanded={showAllTech}
+                className="shrink-0 rounded-full border border-dashed border-slate-600 bg-slate-800/40
+                  px-2.5 py-1 text-[11px] font-medium text-gray-400 transition hover:border-slate-500 hover:text-gray-200"
+              >
+                {showAllTech ? "Show less" : `+ ${hiddenCount} more`}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* CUSTOM TECH — for anything not in the list above */}
@@ -429,7 +492,8 @@ export default function ProjectsForm({
         </div>
 
         <p className="mt-1 text-[11px] text-gray-600">
-          Click a tag above to add or remove it. Use the box for anything not listed.
+          Click a tag above to add or remove it. Use the box for anything not listed — it will
+          get its own consistent color automatically, same as on your portfolio.
         </p>
       </div>
 

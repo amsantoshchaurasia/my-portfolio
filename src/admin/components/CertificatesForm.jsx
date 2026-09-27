@@ -1,76 +1,35 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   createCertificate,
   updateCertificate,
 } from "../../firebase/firestore";
+import { getTechColor, KNOWN_SKILL_TAGS as TAG_SUGGESTIONS } from "../../utils/colors/techColors";
+import { getPlatformColor, COMPANY_SUGGESTIONS } from "../../utils/colors/platformColors";
+import {
+  CERTIFICATE_TYPE_FILTER_OPTIONS as CERTIFICATE_TYPES,
+  getCertificateTypeBadgeClasses as getCertificateCategoryBadgeClasses,
+} from "../../utils/colors/typeColors";
 
 // ======================================================
 // INITIAL FORM
 // ======================================================
+// "technical" is the certificate-type default (was "web" before the
+// Project type / Certificate type split — "web" is not a valid
+// certificate type anymore).
 
 const initialForm = {
   title: "",
   company: "",
-  category: "web",
+  category: "technical",
   year: "",
   order: 1,
   tags: "",
 };
 
 // ======================================================
-// CERTIFICATE TYPE — same values/labels as ProjectsForm's
-// category, so both admin pages stay consistent.
-// ======================================================
-
-const CERTIFICATE_TYPES = [
-  { value: "web", label: "Web Development" },
-  { value: "app", label: "App Development" },
-  { value: "analytics", label: "Data Analyst" },
-  { value: "other", label: "Other" },
-];
-
-// ======================================================
-// COMPANY / ISSUER — quick-pick so common issuers don't get
-// typed inconsistently (e.g. "forage" vs "Forage"). The text
-// input still works for anything not listed.
-// ======================================================
-
-const COMPANY_SUGGESTIONS = [
-  "Forage",
-  "Coursera",
-  "Udemy",
-  "Google",
-  "Microsoft",
-  "IBM",
-  "LinkedIn Learning",
-  "Simplilearn",
-  "HackerRank",
-  "freeCodeCamp",
-];
-
-// ======================================================
 // TAGS
 // ======================================================
-// Quick-pick suggestions keep spelling consistent so the
-// portfolio filter tabs don't get duplicates like "sql" / "SQL".
-const TAG_SUGGESTIONS = [
-  "Data Analytics",
-  "Data Science",
-  "Python",
-  "SQL",
-  "Power BI",
-  "Excel",
-  "Tableau",
-  "Machine Learning",
-  "Cloud Computing",
-  "Web Development",
-  "App Development",
-  "Communication",
-  "Leadership",
-  "Other",
-];
-
 // "Power BI, SQL" -> ["Power BI", "SQL"]  (trimmed, no duplicates)
 function parseTags(value) {
   const seen = new Set();
@@ -131,35 +90,106 @@ async function uploadToCloudinary(file) {
   };
 }
 
-// // ======================================================
-// // CLOUDINARY IMAGE UPLOAD (for certificate thumbnail)
-// // DISABLED: portfolio cards no longer show an image.
-// // Uncomment this (and the other "THUMBNAIL" comments) to bring it back.
-// // ======================================================
-//
-// async function uploadImageToCloudinary(file) {
-//   const formData = new FormData();
-//   formData.append("file", file);
-//   formData.append("upload_preset", UPLOAD_PRESET);
-//
-//   const response = await fetch(
-//     `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-//     {
-//       method: "POST",
-//       body: formData,
-//     }
-//   );
-//
-//   const data = await response.json();
-//
-//   if (!response.ok) {
-//     throw new Error(data.error?.message || "Failed to upload image to Cloudinary.");
-//   }
-//
-//   return {
-//     imageUrl: data.secure_url,
-//   };
-// }
+// ======================================================
+// CUSTOM DROPDOWN — styled to match the public-side filter
+// dropdown (rounded pill button, dark panel, chevron that
+// rotates). Each option renders as its real category badge
+// color instead of a generic highlight.
+// ======================================================
+
+function SelectDropdown({ value, onChange, options, getBadgeClasses }) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef(null);
+
+  const selected = options.find((option) => option.value === value) || options[0];
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={`flex w-full items-center justify-between rounded-lg border bg-slate-800/60 px-3 py-2.5
+          text-sm outline-none transition
+          ${open ? "border-blue-500 ring-1 ring-blue-500/30" : "border-slate-700 hover:border-slate-600"}`}
+      >
+        {getBadgeClasses ? (
+          <span
+            className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${getBadgeClasses(selected?.value)}`}
+          >
+            {selected?.label}
+          </span>
+        ) : (
+          <span className="text-white">{selected?.label}</span>
+        )}
+        <svg
+          viewBox="0 0 24 24"
+          className={`h-4 w-4 flex-shrink-0 fill-none stroke-current stroke-[2.5] text-gray-400 transition-transform duration-200 ${
+            open ? "rotate-180" : ""
+          }`}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+
+      {open && (
+        <ul
+          role="listbox"
+          className="absolute z-20 mt-1.5 w-full overflow-hidden rounded-lg border border-slate-700
+            bg-[#0F1729] p-1.5 shadow-lg shadow-black/40"
+        >
+          {options.map((option) => {
+            const isSelected = option.value === value;
+            return (
+              <li key={option.value} role="option" aria-selected={isSelected}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm transition
+                    ${isSelected ? "bg-slate-800" : "hover:bg-slate-800/60"}`}
+                >
+                  {getBadgeClasses ? (
+                    <span
+                      className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${getBadgeClasses(option.value)}`}
+                    >
+                      {option.label}
+                    </span>
+                  ) : (
+                    <span className="text-gray-300">{option.label}</span>
+                  )}
+
+                  {isSelected && (
+                    <svg viewBox="0 0 24 24" className="h-4 w-4 flex-shrink-0 fill-none stroke-current stroke-[2.5] text-blue-400">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// How many chips are visible before "Show more" / "+N more" is needed.
+const COMPANY_PREVIEW_COUNT = 5;
+const TAG_PREVIEW_COUNT = 5;
 
 // ======================================================
 // COMPONENT
@@ -174,19 +204,19 @@ export default function CertificatesForm({
 
   const [file, setFile] = useState(null);
 
-  // THUMBNAIL (disabled)
-  // const [imageFile, setImageFile] = useState(null);
-  // const [imagePreview, setImagePreview] = useState(null);
-
   const [loading, setLoading] = useState(false);
 
   const [message, setMessage] = useState("");
 
   const [error, setError] = useState("");
 
-  // Tags picker starts collapsed on small screens — see the
-  // responsive max-height on the picker card below.
+  // Preview pickers — collapsed to a short row by default,
+  // "Show more" / "+N more" expands the full list.
+  const [showAllCompanies, setShowAllCompanies] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
+
+  // Free-typed custom tag, added via the box below the picker.
+  const [customTag, setCustomTag] = useState("");
 
   // ======================================================
   // EDIT MODE
@@ -197,39 +227,24 @@ export default function CertificatesForm({
       setForm({
         title: editingCertificate.title || "",
         company: editingCertificate.company || "",
-        category: editingCertificate.category || "web",
+        category: editingCertificate.category || "technical",
         year: editingCertificate.year || "",
         order: editingCertificate.order || 1,
         tags: tagsToString(editingCertificate.tags),
       });
 
       setFile(null);
-      // THUMBNAIL (disabled)
-      // setImageFile(null);
-      // setImagePreview(null);
     } else {
       setForm(initialForm);
       setFile(null);
-      // THUMBNAIL (disabled)
-      // setImageFile(null);
-      // setImagePreview(null);
     }
 
+    setCustomTag("");
+    setShowAllCompanies(false);
+    setShowAllTags(false);
     setMessage("");
     setError("");
   }, [editingCertificate]);
-
-  // ======================================================
-  // CLEANUP IMAGE PREVIEW OBJECT URL (THUMBNAIL - disabled)
-  // ======================================================
-  //
-  // useEffect(() => {
-  //   return () => {
-  //     if (imagePreview) {
-  //       URL.revokeObjectURL(imagePreview);
-  //     }
-  //   };
-  // }, [imagePreview]);
 
   // ======================================================
   // INPUT CHANGE
@@ -244,13 +259,22 @@ export default function CertificatesForm({
     }));
   }
 
+  function handleCategoryChange(value) {
+    setForm((prev) => ({ ...prev, category: value }));
+  }
+
   // ======================================================
-  // COMPANY QUICK-PICK — clicking fills the text field; the
-  // field stays editable for anything not in the list.
+  // COMPANY QUICK-PICK — clicking a suggestion fills the field
+  // (clicking the active one again clears it); typing a name
+  // that isn't in the list keeps it as-is, still gets a
+  // consistent color via getPlatformColor.
   // ======================================================
 
   function selectCompany(company) {
-    setForm((prev) => ({ ...prev, company }));
+    setForm((prev) => ({
+      ...prev,
+      company: prev.company.trim().toLowerCase() === company.toLowerCase() ? "" : company,
+    }));
   }
 
   // ======================================================
@@ -270,6 +294,43 @@ export default function CertificatesForm({
 
       return { ...prev, tags: next.join(", ") };
     });
+  }
+
+  function removeTag(tag) {
+    setForm((prev) => ({
+      ...prev,
+      tags: parseTags(prev.tags)
+        .filter((item) => item !== tag)
+        .join(", "),
+    }));
+  }
+
+  // For a skill/platform not in the suggestions above. Still
+  // gets a consistent color from getTechColor automatically.
+  function handleAddCustomTag() {
+    const value = customTag.trim();
+    if (!value) return;
+
+    const current = parseTags(form.tags);
+    const alreadyAdded = current.some(
+      (item) => item.toLowerCase() === value.toLowerCase()
+    );
+
+    if (!alreadyAdded) {
+      setForm((prev) => ({
+        ...prev,
+        tags: [...current, value].join(", "),
+      }));
+    }
+
+    setCustomTag("");
+  }
+
+  function handleCustomTagKeyDown(e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddCustomTag();
+    }
   }
 
   // ======================================================
@@ -322,12 +383,6 @@ export default function CertificatesForm({
 
     setFile(selectedFile);
   }
-
-  // ======================================================
-  // IMAGE VALIDATION (THUMBNAIL - disabled)
-  // ======================================================
-  //
-  // function handleImageChange(event) { ... }
 
   // ======================================================
   // FORM VALIDATION
@@ -412,8 +467,6 @@ export default function CertificatesForm({
         certificateData.fileName = uploadedFile.fileName;
       }
 
-      // UPLOAD NEW IMAGE TO CLOUDINARY IF SELECTED (THUMBNAIL - disabled)
-
       // ==================================================
       // CREATE NEW CERTIFICATE
       // ==================================================
@@ -438,7 +491,7 @@ export default function CertificatesForm({
 
       setForm(initialForm);
       setFile(null);
-      // THUMBNAIL (disabled)
+      setCustomTag("");
 
       // ==================================================
       // CLEAR FILE INPUTS
@@ -448,7 +501,6 @@ export default function CertificatesForm({
       if (fileInput) {
         fileInput.value = "";
       }
-      // THUMBNAIL (disabled)
 
       // ==================================================
       // REFRESH ADMIN LIST & EXIT EDIT
@@ -478,7 +530,7 @@ export default function CertificatesForm({
 
     setForm(initialForm);
     setFile(null);
-    // THUMBNAIL (disabled)
+    setCustomTag("");
 
     setMessage("");
     setError("");
@@ -487,7 +539,6 @@ export default function CertificatesForm({
     if (fileInput) {
       fileInput.value = "";
     }
-    // THUMBNAIL (disabled)
 
     onCancelEdit?.();
   }
@@ -507,6 +558,19 @@ export default function CertificatesForm({
     "text-sm text-white placeholder:text-gray-500 outline-none transition " +
     "focus:border-blue-500 focus:bg-slate-800 focus:ring-1 focus:ring-blue-500/30 " +
     "disabled:cursor-not-allowed disabled:opacity-60";
+
+  // Company picker derived state
+  const visibleCompanies = showAllCompanies
+    ? COMPANY_SUGGESTIONS
+    : COMPANY_SUGGESTIONS.slice(0, COMPANY_PREVIEW_COUNT);
+  const hiddenCompanyCount = COMPANY_SUGGESTIONS.length - COMPANY_PREVIEW_COUNT;
+  const trimmedCompany = form.company.trim();
+
+  // Tags picker derived state
+  const visibleTags = showAllTags
+    ? TAG_SUGGESTIONS
+    : TAG_SUGGESTIONS.slice(0, TAG_PREVIEW_COUNT);
+  const hiddenTagCount = TAG_SUGGESTIONS.length - TAG_PREVIEW_COUNT;
 
   // ======================================================
   // UI
@@ -567,78 +631,126 @@ export default function CertificatesForm({
         </div>
       </div>
 
-      {/* COMPANY QUICK-PICK — click to fill the field above,
-          keeps issuer names spelled consistently */}
-      <div className="-mt-2 flex flex-wrap gap-1.5">
-        {COMPANY_SUGGESTIONS.map((company) => {
-          const active = form.company.trim().toLowerCase() === company.toLowerCase();
+      {/* COMPANY / PLATFORM PICKER — each issuer uses the exact
+          same color it has on the public portfolio. Preview of 5,
+          "+N more" expands the full list. Typing a name not in the
+          list still gets its own consistent color automatically. */}
+      <div className="rounded-lg border border-slate-700 bg-slate-800/20 p-2.5">
+        <div className="flex flex-wrap gap-1.5">
+          {visibleCompanies.map((company) => {
+            const active = trimmedCompany.toLowerCase() === company.toLowerCase();
+            const colorClasses = getPlatformColor(company);
 
-          return (
+            return (
+              <button
+                key={company}
+                type="button"
+                onClick={() => selectCompany(company)}
+                disabled={loading}
+                aria-pressed={active}
+                className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                  active
+                    ? `bg-white/5 ${colorClasses}`
+                    : "border-slate-700 bg-slate-800/60 text-gray-400 hover:border-slate-600 hover:text-gray-200"
+                }`}
+              >
+                {company}
+              </button>
+            );
+          })}
+
+          {hiddenCompanyCount > 0 && (
             <button
-              key={company}
               type="button"
-              onClick={() => selectCompany(company)}
+              onClick={() => setShowAllCompanies((prev) => !prev)}
               disabled={loading}
-              className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                active
-                  ? "border-blue-500/50 bg-blue-500/15 text-blue-400"
-                  : "border-slate-700 bg-slate-800/60 text-gray-400 hover:border-slate-600 hover:text-white"
-              }`}
+              aria-expanded={showAllCompanies}
+              className="shrink-0 rounded-full border border-dashed border-slate-600 bg-slate-800/40
+                px-2.5 py-1 text-[11px] font-medium text-gray-400 transition hover:border-slate-500 hover:text-gray-200 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {company}
+              {showAllCompanies ? "Show less" : `+ ${hiddenCompanyCount} more`}
             </button>
-          );
-        })}
+          )}
+
+          {trimmedCompany && !visibleCompanies.some((c) => c.toLowerCase() === trimmedCompany.toLowerCase()) && (
+            <span
+              className={`flex shrink-0 items-center gap-1.5 rounded-full border bg-white/5 py-1 pl-2.5 pr-1.5 text-[11px] ${getPlatformColor(trimmedCompany)}`}
+            >
+              {trimmedCompany}
+              <button
+                type="button"
+                onClick={() => setForm((prev) => ({ ...prev, company: "" }))}
+                disabled={loading}
+                aria-label={`Clear ${trimmedCompany}`}
+                className="flex h-3.5 w-3.5 items-center justify-center rounded-full opacity-70 transition hover:text-white hover:opacity-100 disabled:cursor-not-allowed"
+              >
+                <svg viewBox="0 0 24 24" className="h-3 w-3 fill-none stroke-current stroke-[3]">
+                  <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </button>
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* CERTIFICATE TYPE — same values as ProjectsForm's category,
-          so both list pages can badge/filter/color consistently */}
+      {/* CERTIFICATE TYPE — custom dropdown, each option colored
+          exactly like its badge on the public portfolio. Uses its
+          own independent list (Technical / Internship / Course /
+          Professional / Soft Skills / Other) — separate from the
+          Project type list. */}
       <div className="sm:max-w-xs">
         <label className={labelClasses}>Certificate type</label>
-        <select
-          name="category"
+        <SelectDropdown
           value={form.category}
-          onChange={handleChange}
-          disabled={loading}
-          className={inputClasses}
-        >
-          {CERTIFICATE_TYPES.map((type) => (
-            <option key={type.value} value={type.value}>
-              {type.label}
-            </option>
-          ))}
-        </select>
+          onChange={handleCategoryChange}
+          options={CERTIFICATE_TYPES}
+          getBadgeClasses={getCertificateCategoryBadgeClasses}
+        />
       </div>
 
       {/* TAGS / SKILLS */}
       <div>
         <label className={labelClasses}>Skills / Tags</label>
 
-        <input
-          type="text"
-          name="tags"
-          value={form.tags}
-          onChange={handleChange}
-          placeholder="e.g. Power BI, SQL"
-          disabled={loading}
-          className={inputClasses}
-        />
+        {/* SELECTED CHIPS — each tag uses the exact same color it
+            has on the public portfolio, known or custom-typed */}
+        {selectedTags.length > 0 && (
+          <div className="mb-2.5 flex flex-wrap gap-1.5 rounded-lg border border-slate-700 bg-slate-800/40 p-2.5">
+            {selectedTags.map((tag) => {
+              const colorClasses = getTechColor(tag);
+              return (
+                <span
+                  key={tag}
+                  className={`flex items-center gap-1.5 rounded-full border bg-white/5 py-1 pl-2.5 pr-1.5 text-[11px] ${colorClasses}`}
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(tag)}
+                    disabled={loading}
+                    aria-label={`Remove ${tag}`}
+                    className="flex h-3.5 w-3.5 items-center justify-center rounded-full opacity-70 transition hover:text-white hover:opacity-100 disabled:cursor-not-allowed"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-3 w-3 fill-none stroke-current stroke-[3]">
+                      <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                  </button>
+                </span>
+              );
+            })}
+          </div>
+        )}
 
-        {/* QUICK PICK — same cohesive card + footer toggle pattern
-            as the technology picker on the Projects form */}
-        <div className="mt-2.5 overflow-hidden rounded-lg border border-slate-700 bg-slate-800/20">
-          <div
-            className={`flex flex-wrap gap-1.5 p-2.5 transition-[max-height] duration-200 overflow-hidden
-              ${
-                showAllTags
-                  ? "max-h-none"
-                  : "max-h-[46px] sm:max-h-[86px] md:max-h-[126px] lg:max-h-none"
-              }`}
-          >
-            {TAG_SUGGESTIONS.map((tag) => {
+        {/* PICKER — known skills, click to toggle. Preview of 5,
+            "+N more" expands the full list. Selected chips light
+            up in their real portfolio color. */}
+        <div className="rounded-lg border border-slate-700 bg-slate-800/20 p-2.5">
+          <div className="flex flex-wrap gap-1.5">
+            {visibleTags.map((tag) => {
               const active = selectedTags.some(
                 (item) => item.toLowerCase() === tag.toLowerCase()
               );
+              const colorClasses = getTechColor(tag);
 
               return (
                 <button
@@ -646,43 +758,58 @@ export default function CertificatesForm({
                   type="button"
                   onClick={() => toggleTag(tag)}
                   disabled={loading}
+                  aria-pressed={active}
                   className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
                     active
-                      ? "border-blue-500/50 bg-blue-500/15 text-blue-400"
-                      : "border-slate-700 bg-slate-800/60 text-gray-400 hover:border-slate-600 hover:text-white"
+                      ? `bg-white/5 ${colorClasses}`
+                      : "border-slate-700 bg-slate-800/60 text-gray-400 hover:border-slate-600 hover:text-gray-200"
                   }`}
                 >
-                  {active ? "✓ " : "+ "}
                   {tag}
                 </button>
               );
             })}
-          </div>
 
-          {/* FOOTER TOGGLE BAR — hidden at lg+ since it's always open there */}
+            {hiddenTagCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowAllTags((prev) => !prev)}
+                disabled={loading}
+                aria-expanded={showAllTags}
+                className="shrink-0 rounded-full border border-dashed border-slate-600 bg-slate-800/40
+                  px-2.5 py-1 text-[11px] font-medium text-gray-400 transition hover:border-slate-500 hover:text-gray-200 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {showAllTags ? "Show less" : `+ ${hiddenTagCount} more`}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* CUSTOM TAG — for a skill/platform not in the list above */}
+        <div className="mt-2 flex gap-2">
+          <input
+            type="text"
+            value={customTag}
+            onChange={(e) => setCustomTag(e.target.value)}
+            onKeyDown={handleCustomTagKeyDown}
+            placeholder="Not in the list? Type here..."
+            disabled={loading}
+            className={inputClasses}
+          />
           <button
             type="button"
-            onClick={() => setShowAllTags((prev) => !prev)}
-            aria-expanded={showAllTags}
-            className="flex w-full items-center justify-center gap-1.5 border-t border-slate-700
-              bg-slate-800/40 py-2 text-[11px] font-medium text-gray-300 transition
-              hover:bg-slate-800/70 hover:text-blue-400 lg:hidden"
+            onClick={handleAddCustomTag}
+            disabled={loading}
+            className="shrink-0 rounded-lg border border-slate-700 bg-slate-800/60 px-4 text-sm
+              font-medium text-gray-300 transition hover:border-blue-500/40 hover:text-blue-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {showAllTags ? "Show less" : `Show all tags (${TAG_SUGGESTIONS.length})`}
-            <svg
-              viewBox="0 0 24 24"
-              className={`h-3 w-3 fill-none stroke-current stroke-[3] transition-transform duration-200 ${
-                showAllTags ? "rotate-180" : ""
-              }`}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
-            </svg>
+            Add
           </button>
         </div>
 
         <p className="mt-1.5 text-[11px] text-gray-600">
-          Separate multiple tags with commas. These become the filter tabs on
-          your portfolio, so keep spelling consistent.
+          These become the filter tabs on your portfolio. Anything you type that isn't in the
+          list still gets its own consistent color automatically, same as on your portfolio.
         </p>
       </div>
 
