@@ -1,23 +1,22 @@
 import { useEffect, useState } from "react";
-import { FiExternalLink, FiFileText, FiLoader } from "react-icons/fi";
+import { FiExternalLink, FiFileText, FiLoader, FiStar } from "react-icons/fi";
 
 import { getCertificateFileURL } from "../../firebase/storage";
 import {
   getCertificateCategoryLabel,
   getCertificateCategoryBadgeClasses,
-  getPlatformColor,
   getTechColor,
 } from "./certificateTypeUtils";
+import { formatIssueDate } from "../../utils/formatIssueDate";
 
-// Total badges shown in the bottom row before collapsing into "+N"
-// (platform + tech tags combined, in admin's order — so the first
-// tech tag admin picked is treated as the "main" tech).
-const MAX_VISIBLE_BADGES = 3;
-
-export default function CertificateCard({ certificate, tags = [] }) {
+export default function CertificateCard({
+  certificate,
+  domains = [],
+  tech = [],
+  showStar = false,
+}) {
   const [fileUrl, setFileUrl] = useState(null);
   const [loadingFile, setLoadingFile] = useState(true);
-  const [showAllBadges, setShowAllBadges] = useState(false);
 
   // ======================================================
   // RESOLVE FILE (fileUrl -> storagePath -> pdf)
@@ -63,197 +62,155 @@ export default function CertificateCard({ certificate, tags = [] }) {
   }, [certificate?.fileUrl, certificate?.storagePath, certificate?.pdf]);
 
   // ======================================================
-  // BADGES — platform first (if present), then tech tags in
-  // the order admin added them. Combined list is what gets
-  // truncated to MAX_VISIBLE_BADGES.
+  // DERIVED
   // ======================================================
 
-  const allBadges = [
-    ...(certificate?.company
-      ? [{ key: "platform", label: certificate.company, className: getPlatformColor(certificate.company) }]
-      : []),
-    ...tags.map((tag) => ({ key: `tag-${tag}`, label: tag, className: getTechColor(tag) })),
-  ];
-
-  const visibleBadges = showAllBadges ? allBadges : allBadges.slice(0, MAX_VISIBLE_BADGES);
-  const hiddenCount = allBadges.length - MAX_VISIBLE_BADGES;
+  const company = certificate?.company || "";
+  const issueDate = formatIssueDate(certificate);
 
   // ======================================================
-  // UI — header row matches ProjectCard exactly:
-  // "CERTIFICATE" label + type badge (left) / year (right).
-  // Title below. Platform + tech badges share ONE row below
-  // the title while collapsed — capped at 3 with "+N", each
-  // badge label truncates so nothing is ever half-cut and
-  // "+N" always stays on the same line. Clicking "+N" switches
-  // the row to wrap mode, showing every badge (full text) on
-  // as many rows as needed, with a "Show less" to collapse back.
+  // UI
+  //
+  //  ┃ BCG Data Science Job Simulation                    [↗]
+  //  ┃ Forage · [Virtual Internship] · [Data Science]  Sep 2026
+  //  ┃ [Python] [SQL] [Power BI] [Excel] [Tableau]
+  //
+  //  Line 1  title (one line) + open-certificate button
+  //  Line 2  platform · type · all domains ....... date (right)
+  //  Line 3  all tech chips (wrap to a new row only if the card is narrow)
+  //
+  //  Every card has the same minimum height, so the grid stays tidy.
   // ======================================================
 
   return (
     <div
       className="
         group
+        relative
         flex
-        h-full
+        min-h-[112px]
         w-full
+        sm:w-[calc(50%_-_0.5rem)]
+        lg:w-[calc(33.333%_-_0.667rem)]
         flex-col
+        justify-between
+        gap-2.5
         rounded-xl
-        sm:rounded-2xl
         border
         border-slate-800
         bg-slate-900/60
-        p-4
-        sm:px-5
-        sm:py-4
-        md:px-6
-        md:py-5
-        lg:px-5
-        xl:px-6
-        xl:py-6
-        2xl:px-7
-        2xl:py-4
-        transition-all
-        duration-300
-        hover:-translate-y-1
-        hover:border-blue-500/60
-        hover:shadow-[0_10px_30px_rgba(37,99,235,0.10)]
+        py-3.5
+        pl-5
+        pr-3.5
+        transition-colors
+        duration-200
+        hover:border-slate-600
       "
     >
+      {/* Accent line */}
+      <span
+        aria-hidden="true"
+        className="absolute inset-y-3 left-0 w-[3px] rounded-r-full bg-gradient-to-b from-blue-500 to-indigo-500/60"
+      />
 
-      {/* Header — label + type badge (left), year (right) */}
-      <div className="flex items-center justify-between gap-2">
+      {/* LINE 1 — title + open button */}
+      <div className="flex items-start justify-between gap-3">
+        <h3
+          title={certificate?.title}
+          className="min-w-0 flex-1 truncate pt-1 text-[15px] font-semibold leading-tight text-white"
+        >
+          {showStar && certificate?.featured && (
+            <FiStar
+              size={13}
+              aria-label="Featured"
+              className="mr-1.5 inline-block -translate-y-px fill-amber-400 text-amber-400"
+            />
+          )}
+          {certificate?.title}
+        </h3>
 
-        <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
-          <span className="uppercase tracking-[2px] sm:tracking-[4px] text-[10px] sm:text-xs text-gray-500">
-            Certificate
-          </span>
+        <div className="shrink-0">
+          {loadingFile ? (
+            <span className="flex h-8 w-8 items-center justify-center text-gray-500">
+              <FiLoader size={14} className="animate-spin" />
+            </span>
+          ) : fileUrl ? (
+            <a
+              href={fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="View certificate"
+              aria-label={`View certificate: ${certificate?.title || ""}`}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-800/40
+                text-gray-300 transition hover:border-blue-500/60 hover:bg-blue-500/10 hover:text-blue-300
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50"
+            >
+              <FiExternalLink size={14} />
+            </a>
+          ) : (
+            <span
+              title="Certificate unavailable"
+              className="flex h-8 w-8 items-center justify-center text-gray-600"
+            >
+              <FiFileText size={14} />
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {/* LINE 2 — platform · type · domains ........ date */}
+        <div className="flex items-center gap-2 text-xs">
+          {company && (
+            <span
+              className="min-w-0 max-w-[34%] truncate font-medium text-gray-300"
+              title={company}
+            >
+              {company}
+            </span>
+          )}
 
           <span
-            className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-medium ${getCertificateCategoryBadgeClasses(
+            className={`shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold ${getCertificateCategoryBadgeClasses(
               certificate?.category
             )}`}
           >
             {getCertificateCategoryLabel(certificate?.category)}
           </span>
+
+          {domains.map((domain) => (
+            <span
+              key={domain}
+              title={domain}
+              className={`min-w-0 truncate rounded-md border bg-white/5 px-1.5 py-0.5 text-[10px] font-semibold ${getTechColor(
+                domain
+              )}`}
+            >
+              {domain}
+            </span>
+          ))}
+
+          {issueDate && (
+            <span className="ml-auto shrink-0 pl-1 tabular-nums text-gray-500">
+              {issueDate}
+            </span>
+          )}
         </div>
 
-        <span className="shrink-0 bg-blue-600/20 text-blue-400 text-xs sm:text-sm px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full">
-          {certificate?.year}
-        </span>
-
+        {/* LINE 3 — all tech chips (space is reserved even when there are none) */}
+        <div className="flex min-h-[22px] flex-wrap items-center gap-1.5">
+          {tech.map((item) => (
+            <span
+              key={item}
+              title={item}
+              className="max-w-[140px] truncate rounded-md border border-slate-700/70 bg-slate-800/50
+                px-2 py-0.5 text-[11px] font-medium text-gray-300"
+            >
+              {item}
+            </span>
+          ))}
+        </div>
       </div>
-
-      {/* Title */}
-      <h3
-        title={certificate?.title}
-        className="
-          mt-3
-          sm:mt-4
-          md:mt-5
-          lg:mt-3
-          xl:mt-5
-          line-clamp-2
-          text-lg
-          sm:text-xl
-          md:text-2xl
-          lg:text-xl
-          xl:text-2xl
-          font-bold
-          leading-tight
-        "
-      >
-        {certificate?.title}
-      </h3>
-
-      {/* Flexible spacer — pins the badges + link together at the
-          bottom, same idea as ProjectCard's spacer */}
-      <div className="flex-1" />
-
-      {/* Platform + tech badges */}
-      <div
-        className={`mt-4 sm:mt-5 flex items-center gap-2 sm:gap-2.5 ${
-          showAllBadges ? "flex-wrap" : "flex-nowrap"
-        }`}
-      >
-
-        {visibleBadges.map((badge) => (
-          <span
-            key={badge.key}
-            title={badge.label}
-            className={`shrink-0 rounded-full border bg-slate-800/60 px-2.5 py-1 text-xs sm:text-sm font-medium ${
-              badge.className
-            } ${showAllBadges ? "" : "max-w-[92px] sm:max-w-[110px] md:max-w-[130px] truncate"}`}
-          >
-            {badge.label}
-          </span>
-        ))}
-
-        {!showAllBadges && hiddenCount > 0 && (
-          <button
-            type="button"
-            onClick={() => setShowAllBadges(true)}
-            className="shrink-0 rounded-full border border-slate-700/70 bg-slate-800/60 px-2.5 py-1 text-xs sm:text-sm font-medium text-gray-400 transition hover:border-slate-600 hover:text-white"
-          >
-            +{hiddenCount}
-          </button>
-        )}
-
-        {showAllBadges && allBadges.length > MAX_VISIBLE_BADGES && (
-          <button
-            type="button"
-            onClick={() => setShowAllBadges(false)}
-            className="shrink-0 rounded-full border border-slate-700/70 bg-slate-800/60 px-2.5 py-1 text-xs sm:text-sm font-medium text-gray-400 transition hover:border-slate-600 hover:text-white"
-          >
-            Show less
-          </button>
-        )}
-
-      </div>
-
-      {/* Link */}
-      <div className="pt-4 sm:pt-5">
-        {loadingFile ? (
-          <span className="inline-flex items-center gap-1.5 text-sm md:text-base 2xl:text-[17px] text-gray-500">
-            <FiLoader size={13} className="sm:h-4 sm:w-4 animate-spin" />
-            Loading...
-          </span>
-        ) : fileUrl ? (
-          <a
-            href={fileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="
-              inline-flex
-              w-fit
-              items-center
-              gap-1.5
-              md:gap-2
-              text-sm
-              md:text-base
-              2xl:text-[17px]
-              font-medium
-              text-blue-400
-              underline-offset-4
-              transition-colors
-              duration-200
-              hover:text-blue-300
-              hover:underline
-            "
-          >
-            View Certificate
-            <FiExternalLink
-              size={13}
-              className="sm:h-4 sm:w-4 transition-transform duration-200 sm:group-hover:translate-x-0.5 sm:group-hover:-translate-y-0.5"
-            />
-          </a>
-        ) : (
-          <span className="inline-flex items-center gap-1.5 text-sm md:text-base 2xl:text-[17px] text-gray-500">
-            <FiFileText size={13} className="sm:h-4 sm:w-4" />
-            Certificate unavailable
-          </span>
-        )}
-      </div>
-
     </div>
   );
 }

@@ -1,22 +1,56 @@
 import { useEffect, useRef, useState } from "react";
 
-import { getCertificates, deleteCertificate } from "../../firebase/firestore";
+import { getCertificates, deleteCertificate, updateCertificate } from "../../firebase/firestore";
 import { deleteCertificateFile } from "../../firebase/storage";
 import { getTechColor } from "../../utils/colors/techColors";
+import { getPlatformColor } from "../../utils/colors/platformColors";
 import {
   CERTIFICATE_TYPE_FILTER_OPTIONS,
   KNOWN_CERTIFICATE_TYPE_VALUES,
   getCertificateTypeLabel as getTypeLabel,
   getCertificateTypeColors as getTypeColors,
 } from "../../utils/colors/typeColors";
+import { formatIssueDate } from "../../utils/formatIssueDate";
+import { DEFAULT_DOMAINS } from "../../utils/certificateOptions";
 
-// Accepts an array or a comma-separated string, returns a clean array.
 function getTags(raw) {
   if (!raw) return [];
 
   const list = Array.isArray(raw) ? raw : String(raw).split(",");
 
   return list.map((tag) => String(tag).trim()).filter(Boolean);
+}
+
+// New certificates have domains[] + tech[].
+// Old certificates only have tags, so they are split using the default domain list.
+const DOMAIN_SET = new Set(DEFAULT_DOMAINS.map((d) => d.toLowerCase()));
+
+function getDomainsAndTech(certificate) {
+  const hasNewFields =
+    Array.isArray(certificate.domains) || Array.isArray(certificate.tech);
+
+  if (hasNewFields) {
+    return {
+      domains: getTags(certificate.domains),
+      tech: getTags(certificate.tech),
+    };
+  }
+
+  const tags = getTags(certificate.tags);
+
+  return {
+    domains: tags.filter((t) => DOMAIN_SET.has(t.toLowerCase())),
+    tech: tags.filter((t) => !DOMAIN_SET.has(t.toLowerCase())),
+  };
+}
+
+const knownCategories = KNOWN_CERTIFICATE_TYPE_VALUES;
+
+function matchesFilter(certificate, id) {
+  if (id === "all") return true;
+  if (id === "featured") return Boolean(certificate.featured);
+  if (id === "other") return !knownCategories.includes(certificate.category);
+  return certificate.category === id;
 }
 
 // ======================================================
@@ -29,7 +63,6 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
   const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState("");
 
-  // TYPE FILTER — same dropdown pattern as ProjectsList
   const [activeFilter, setActiveFilter] = useState("all");
   const [filterOpen, setFilterOpen] = useState(false);
   const filterRef = useRef(null);
@@ -53,17 +86,9 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
     }
   }
 
-  // ======================================================
-  // INITIAL LOAD / REFRESH
-  // ======================================================
-
   useEffect(() => {
     loadCertificates();
   }, [refresh]);
-
-  // ======================================================
-  // FILTER DROPDOWN — close on outside click / Escape
-  // ======================================================
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -86,6 +111,29 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
   }, []);
 
   // ======================================================
+  // TOGGLE FEATURED (star button)
+  // ======================================================
+
+  async function handleToggleFeatured(certificate) {
+    const next = !certificate.featured;
+
+    setCertificates((prev) =>
+      prev.map((c) => (c.id === certificate.id ? { ...c, featured: next } : c))
+    );
+
+    try {
+      await updateCertificate(certificate.id, { featured: next });
+    } catch (err) {
+      console.error("Featured toggle failed:", err);
+
+      setCertificates((prev) =>
+        prev.map((c) => (c.id === certificate.id ? { ...c, featured: !next } : c))
+      );
+      setError("Could not update featured status. Please try again.");
+    }
+  }
+
+  // ======================================================
   // DELETE CERTIFICATE
   // ======================================================
 
@@ -106,10 +154,8 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
       setDeletingId(certificate.id);
       setError("");
 
-      // DELETE FIRESTORE DOCUMENT FIRST
       await deleteCertificate(certificate.id);
 
-      // DELETE STORAGE PDF
       if (certificate.storagePath) {
         try {
           await deleteCertificateFile(certificate.storagePath);
@@ -121,7 +167,6 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
         }
       }
 
-      // REMOVE FROM LOCAL STATE
       setCertificates((prev) => prev.filter((item) => item.id !== certificate.id));
 
       alert("Certificate deleted successfully.");
@@ -146,28 +191,24 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
     );
   }
 
-  // Filter tabs are built from the shared CERTIFICATE_TYPE_FILTER_OPTIONS
-  // list (typeColors.js) — this is now its OWN independent list from
-  // Projects, so adding a new certificate type there makes it show up
-  // here automatically without touching this file again.
   const filterTabs = [
     { id: "all", label: "All Certificates" },
+    { id: "featured", label: "⭐ Featured" },
     ...CERTIFICATE_TYPE_FILTER_OPTIONS.map((option) => ({
       id: option.value,
       label: option.label,
     })),
   ];
 
-  const knownCategories = KNOWN_CERTIFICATE_TYPE_VALUES;
+  const filteredCertificates = certificates.filter((c) =>
+    matchesFilter(c, activeFilter)
+  );
 
-  const filteredCertificates =
-    activeFilter === "all"
-      ? certificates
-      : activeFilter === "other"
-        ? certificates.filter((c) => !knownCategories.includes(c.category))
-        : certificates.filter((c) => c.category === activeFilter);
+  const featuredCount = certificates.filter((c) => c.featured).length;
 
   const activeTab = filterTabs.find((tab) => tab.id === activeFilter);
+
+  const isSpecialTab = (id) => id === "all" || id === "featured";
 
   // ======================================================
   // UI
@@ -186,13 +227,24 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
           </p>
         </div>
 
-        <span className="shrink-0 rounded-full border border-slate-700 bg-slate-800/60 px-2.5 py-1 text-xs font-medium text-gray-300">
-          {certificates.length}
-        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          <span
+            className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
+              featuredCount > 8
+                ? "border-amber-400/40 bg-amber-400/10 text-amber-300"
+                : "border-slate-700 bg-slate-800/60 text-gray-300"
+            }`}
+            title={featuredCount > 8 ? "Too many featured — keep it to 6-8" : "Featured certificates"}
+          >
+            ⭐ {featuredCount}
+          </span>
+          <span className="rounded-full border border-slate-700 bg-slate-800/60 px-2.5 py-1 text-xs font-medium text-gray-300">
+            {certificates.length}
+          </span>
+        </div>
       </div>
 
-      {/* TYPE FILTER — custom dropdown with a color dot per type,
-          same pattern as ProjectsList */}
+      {/* TYPE FILTER */}
       <div className="relative z-20 mb-4 sm:max-w-xs" ref={filterRef}>
         <button
           type="button"
@@ -204,7 +256,7 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
             ${filterOpen ? "border-blue-500 ring-1 ring-blue-500/30" : "border-slate-700 hover:border-slate-600"}`}
         >
           <span className="flex min-w-0 items-center gap-2.5">
-            {activeFilter === "all" ? (
+            {isSpecialTab(activeFilter) ? (
               <svg
                 viewBox="0 0 24 24"
                 className="h-4 w-4 shrink-0 fill-none stroke-current stroke-2 text-gray-400"
@@ -238,13 +290,7 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
               border border-slate-700 bg-[#182233] shadow-xl shadow-black/40"
           >
             {filterTabs.map((tab) => {
-              const count =
-                tab.id === "all"
-                  ? certificates.length
-                  : tab.id === "other"
-                    ? certificates.filter((c) => !knownCategories.includes(c.category)).length
-                    : certificates.filter((c) => c.category === tab.id).length;
-
+              const count = certificates.filter((c) => matchesFilter(c, tab.id)).length;
               const isActive = tab.id === activeFilter;
 
               return (
@@ -262,7 +308,7 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
                     ${isActive ? "bg-blue-500/15 text-blue-400" : "text-gray-300 hover:bg-slate-800/80"}`}
                 >
                   <span className="flex min-w-0 items-center gap-2.5">
-                    {tab.id === "all" ? (
+                    {isSpecialTab(tab.id) ? (
                       <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center">
                         {isActive && (
                           <svg
@@ -299,7 +345,6 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
         )}
       </div>
 
-      {/* ERROR */}
       {error && (
         <div className="mb-3 rounded-lg border border-red-500/25 bg-red-500/10 px-3.5 py-2.5 text-xs text-red-400">
           {error}
@@ -318,45 +363,51 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
           <p className="mt-1 text-xs text-gray-500">
             {certificates.length === 0
               ? "Add your first certificate using the form above."
-              : "Try a different filter or add a new certificate above."}
+              : activeFilter === "featured"
+                ? "No featured certificates yet. Tap the star on a certificate to feature it."
+                : "Try a different filter or add a new certificate above."}
           </p>
         </div>
       ) : (
-        /* CERTIFICATE LIST — slim cards (Skills-style) */
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredCertificates.map((certificate) => {
             const isDeleting = deletingId === certificate.id;
-            const tags = getTags(certificate.tags);
+            const { domains, tech } = getDomainsAndTech(certificate);
             const typeColors = getTypeColors(certificate.category);
+            const issueDate = formatIssueDate(certificate);
 
             return (
               <div
                 key={certificate.id}
                 className="relative flex flex-col overflow-hidden rounded-lg border border-slate-800 bg-[#111827] py-3.5 pl-4 pr-3.5 transition hover:border-slate-700"
               >
-                {/* Type accent strip — same idea as Projects cards,
-                    so certificate type is readable at a glance */}
                 <span
                   className={`absolute inset-y-0 left-0 w-[3px] rounded-l-lg ${typeColors.accent}`}
                 />
 
-                {/* TITLE */}
-                <p className="truncate text-sm font-semibold text-white">
-                  {certificate.title}
-                </p>
+                {/* LINE 1: NAME (left) + DATE (right corner) */}
+                <div className="flex items-start justify-between gap-3">
+                  <p className="min-w-0 flex-1 truncate text-sm font-semibold text-white">
+                    {certificate.title}
+                  </p>
 
-                {/* COMPANY + YEAR + TYPE (left, grouped) — ICON ACTIONS (right) — same row */}
+                  {issueDate && (
+                    <span className="shrink-0 whitespace-nowrap rounded-full bg-slate-700/40 px-2 py-0.5 text-[11px] font-semibold text-gray-300">
+                      {issueDate}
+                    </span>
+                  )}
+                </div>
+
+                {/* LINE 2: PLATFORM, TYPE, DOMAIN (left) + STAR / EDIT / DELETE (right) */}
                 <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                     {certificate.company && (
-                      <span className="shrink-0 truncate rounded-full bg-blue-500/10 px-2 py-0.5 text-[11px] font-semibold text-blue-400">
+                      <span
+                        className={`shrink-0 truncate rounded-full border bg-white/5 px-2 py-0.5 text-[11px] font-semibold ${getPlatformColor(
+                          certificate.company
+                        )}`}
+                      >
                         {certificate.company}
-                      </span>
-                    )}
-
-                    {certificate.year && (
-                      <span className="shrink-0 rounded-full bg-slate-700/40 px-2 py-0.5 text-[11px] font-semibold text-gray-300">
-                        {certificate.year}
                       </span>
                     )}
 
@@ -365,9 +416,43 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
                     >
                       {getTypeLabel(certificate.category)}
                     </span>
+
+                    {domains.map((domain) => (
+                      <span
+                        key={`d-${domain}`}
+                        className={`shrink-0 rounded-full border bg-white/5 px-2 py-0.5 text-[11px] font-semibold ${getTechColor(domain)}`}
+                      >
+                        {domain}
+                      </span>
+                    ))}
                   </div>
 
                   <div className="flex shrink-0 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleFeatured(certificate)}
+                      disabled={isDeleting}
+                      aria-pressed={Boolean(certificate.featured)}
+                      aria-label={
+                        certificate.featured ? "Remove from featured" : "Mark as featured"
+                      }
+                      className={`flex h-7 w-7 items-center justify-center rounded-full border transition
+                        disabled:cursor-not-allowed disabled:opacity-40 ${
+                          certificate.featured
+                            ? "border-amber-400/40 bg-amber-400/15 text-amber-400"
+                            : "border-slate-700 bg-slate-800/60 text-gray-500 hover:text-amber-300"
+                        }`}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        className={`h-3.5 w-3.5 stroke-current stroke-2 ${
+                          certificate.featured ? "fill-current" : "fill-none"
+                        }`}
+                      >
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                      </svg>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => onEditCertificate?.(certificate)}
@@ -414,20 +499,19 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
                   </div>
                 </div>
 
-                {/* SKILL TAGS — same getTechColor as CertificatesForm & the
-                    public site, so a tag's color always matches everywhere
-                    (previously this used a separate hash palette that could
-                    mismatch the color shown in the form/public card) */}
-                <div className="mt-2 flex min-h-[24px] flex-wrap items-start gap-1.5">
-                  {tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${getTechColor(tag)}`}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+                {/* LINE 3: TECH / SKILLS */}
+                {tech.length > 0 && (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    {tech.map((item) => (
+                      <span
+                        key={`t-${item}`}
+                        className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${getTechColor(item)}`}
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}

@@ -3,14 +3,54 @@ import { motion } from "framer-motion";
 
 import CertificateCard from "./CertificateCard";
 import { getCertificates } from "../../firebase/firestore";
-import { CERTIFICATE_CATEGORIES, matchesCertificateCategory } from "./certificateTypeUtils";
+import { DEFAULT_DOMAINS } from "../../utils/certificateOptions";
 
 const byOrder = (a, b) => Number(a.order || 1) - Number(b.order || 1);
+
+// Featured view shows every starred certificate (no limit).
+// "All" and domain views show this many first, then "Show more"
+const PAGE_SIZE = 9;
 
 function normalizeTags(raw) {
   if (!raw) return [];
   const list = Array.isArray(raw) ? raw : String(raw).split(",");
   return list.map((tag) => String(tag).trim()).filter(Boolean);
+}
+
+// New certificates have domains[] + tech[].
+// Old certificates only have tags, so they are split using the default domain list.
+const DOMAIN_SET = new Set(DEFAULT_DOMAINS.map((d) => d.toLowerCase()));
+
+function getDomainsAndTech(certificate) {
+  const hasNewFields =
+    Array.isArray(certificate.domains) || Array.isArray(certificate.tech);
+
+  if (hasNewFields) {
+    return {
+      domains: normalizeTags(certificate.domains),
+      tech: normalizeTags(certificate.tech),
+    };
+  }
+
+  const tags = normalizeTags(certificate.tags);
+
+  return {
+    domains: tags.filter((t) => DOMAIN_SET.has(t.toLowerCase())),
+    tech: tags.filter((t) => !DOMAIN_SET.has(t.toLowerCase())),
+  };
+}
+
+// Filter values: "featured", "all", or "d:<domain in lowercase>"
+function matchesFilter(certificate, filter) {
+  if (filter === "all") return true;
+  if (filter === "featured") return Boolean(certificate.featured);
+
+  if (filter.startsWith("d:")) {
+    const key = filter.slice(2);
+    return certificate._domains.some((d) => d.toLowerCase() === key);
+  }
+
+  return true;
 }
 
 export default function CertificateGrid() {
@@ -19,12 +59,11 @@ export default function CertificateGrid() {
   const [error, setError] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState("all");
+  // Default view = featured certificates only
+  const [activeFilter, setActiveFilter] = useState("featured");
   const [filterOpen, setFilterOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const filterRef = useRef(null);
-
-  const filterOptions = [{ value: "all", label: "All Certificates" }, ...CERTIFICATE_CATEGORIES];
-  const activeOption = filterOptions.find((option) => option.value === activeFilter);
 
   // FILTER DROPDOWN — close on outside click / Escape
   useEffect(() => {
@@ -57,13 +96,23 @@ export default function CertificateGrid() {
         if (!mounted) return;
 
         const prepared = data
-          .map((certificate) => ({
-            ...certificate,
-            _tags: normalizeTags(certificate.tags),
-          }))
+          .map((certificate) => {
+            const { domains, tech } = getDomainsAndTech(certificate);
+            return {
+              ...certificate,
+              _domains: domains,
+              _tech: tech,
+            };
+          })
           .sort(byOrder);
 
         setCertificates(prepared);
+
+        // If no certificate is starred yet, don't show an empty section:
+        // fall back to "All" until at least one is featured.
+        if (!prepared.some((c) => c.featured)) {
+          setActiveFilter("all");
+        }
       } catch (err) {
         console.error("Error loading certificates:", err);
         if (mounted) setError("Unable to load certificates right now.");
@@ -78,42 +127,104 @@ export default function CertificateGrid() {
     };
   }, []);
 
-  // ONLY SHOW FILTER OPTIONS THAT ACTUALLY EXIST IN ADMIN DATA
+  // Start from the first page again whenever the view changes
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [activeFilter, searchQuery]);
+
+  const featuredCount = useMemo(
+    () => certificates.filter((c) => c.featured).length,
+    [certificates]
+  );
+
+  // FILTER OPTIONS: Featured (only if some exist), All, then one option per
+  // domain that actually has certificates. Built from the certificates
+  // themselves, so an option appears/disappears automatically.
   const availableFilterOptions = useMemo(() => {
-    return filterOptions.filter((option) => {
-      if (option.value === "all") return true;
-      return certificates.some((c) => matchesCertificateCategory(c, option.value));
+    const domainMap = new Map(); // lower -> { label, count }
+
+    certificates.forEach((certificate) => {
+      const seenInThisCertificate = new Set();
+
+      certificate._domains.forEach((domain) => {
+        const key = domain.toLowerCase();
+        if (seenInThisCertificate.has(key)) return;
+        seenInThisCertificate.add(key);
+
+        const existing = domainMap.get(key);
+        if (existing) existing.count += 1;
+        else domainMap.set(key, { label: domain, count: 1 });
+      });
     });
-  }, [certificates]);
 
-  // FILTERED + SEARCHED LIST (title + company + tags)
+    const domainOptions = [...domainMap.entries()]
+      .sort((a, b) => b[1].count - a[1].count || a[1].label.localeCompare(b[1].label))
+      .map(([key, { label, count }]) => ({ value: `d:${key}`, label, count }));
+
+    return [
+      ...(featuredCount > 0
+        ? [{ value: "featured", label: "⭐ Featured", count: featuredCount }]
+        : []),
+      { value: "all", label: "All Certificates", count: certificates.length },
+      ...domainOptions,
+    ];
+  }, [certificates, featuredCount]);
+
+  // If the selected domain no longer exists (its last certificate was
+  // deleted), quietly fall back to the first available option.
+  const effectiveFilter = availableFilterOptions.some((o) => o.value === activeFilter)
+    ? activeFilter
+    : availableFilterOptions[0]?.value || "all";
+
+  const activeOption = availableFilterOptions.find(
+    (option) => option.value === effectiveFilter
+  );
+
+  const isFeaturedView = effectiveFilter === "featured";
+  const query = searchQuery.trim().toLowerCase();
+
+  // FILTERED + SEARCHED LIST (title + platform + domains + tech)
+  // Searching while on "Featured" looks through ALL certificates,
+  // otherwise a search would miss the ones that are not starred.
   const filteredCertificates = useMemo(() => {
-    const categoryFiltered = certificates.filter((certificate) =>
-      matchesCertificateCategory(certificate, activeFilter)
-    );
+    const base =
+      isFeaturedView && query
+        ? certificates
+        : certificates.filter((c) => matchesFilter(c, effectiveFilter));
 
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return categoryFiltered;
+    if (!query) return base;
 
-    return categoryFiltered.filter((certificate) => {
+    return base.filter((certificate) => {
       const titleMatch = (certificate.title || "").toLowerCase().includes(query);
       const companyMatch = (certificate.company || "").toLowerCase().includes(query);
-      const tagMatch = certificate._tags.some((tag) =>
+      const skillMatch = [...certificate._domains, ...certificate._tech].some((tag) =>
         (tag || "").toLowerCase().includes(query)
       );
 
-      return titleMatch || companyMatch || tagMatch;
+      return titleMatch || companyMatch || skillMatch;
     });
-  }, [certificates, activeFilter, searchQuery]);
+  }, [certificates, effectiveFilter, query, isFeaturedView]);
 
-  // LOADING
+  // Featured view shows every starred certificate (2, 5 or 10, no paging).
+  // "All" and domain views are paged (9 at a time). Searching is paged too.
+  const paged = !isFeaturedView || Boolean(query);
+  const shownCertificates = paged
+    ? filteredCertificates.slice(0, visibleCount)
+    : filteredCertificates;
+  const remaining = filteredCertificates.length - shownCertificates.length;
+
+  const showViewAllButton =
+    isFeaturedView && !query && certificates.length > featuredCount;
+
+  // LOADING (slim skeletons)
   if (loading) {
     return (
-      <div className="mt-6 sm:mt-6 md:mt-8 lg:mt-8 grid gap-4 sm:gap-4 md:gap-5 xl:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-6 flex flex-wrap justify-center gap-4 md:mt-8">
         {[1, 2, 3].map((item) => (
           <div
             key={item}
-            className="h-[150px] sm:h-[150px] md:h-[170px] xl:h-[180px] 2xl:h-[170px] animate-pulse rounded-xl sm:rounded-2xl border border-slate-800 bg-slate-900/70"
+            className="h-[112px] w-full animate-pulse rounded-xl border border-slate-800 bg-slate-900/70
+              sm:w-[calc(50%_-_0.5rem)] lg:w-[calc(33.333%_-_0.667rem)]"
           />
         ))}
       </div>
@@ -147,8 +258,8 @@ export default function CertificateGrid() {
           />
         </div>
 
-        {/* CATEGORY FILTER */}
-        <div className="relative z-20 sm:w-56" ref={filterRef}>
+        {/* DOMAIN FILTER */}
+        <div className="relative z-20 sm:w-64" ref={filterRef}>
           <button
             type="button"
             onClick={() => setFilterOpen((prev) => !prev)}
@@ -172,11 +283,11 @@ export default function CertificateGrid() {
           {filterOpen && (
             <div
               role="listbox"
-              className="absolute left-0 right-0 top-[calc(100%+6px)] overflow-hidden rounded-xl
+              className="absolute left-0 right-0 top-[calc(100%+6px)] max-h-72 overflow-y-auto rounded-xl
                 border border-slate-700 bg-[#111827] shadow-xl shadow-black/40"
             >
               {availableFilterOptions.map((option) => {
-                const isActive = option.value === activeFilter;
+                const isActive = option.value === activeOption?.value;
 
                 return (
                   <button
@@ -188,11 +299,20 @@ export default function CertificateGrid() {
                       setActiveFilter(option.value);
                       setFilterOpen(false);
                     }}
-                    className={`block w-full border-b border-slate-800/70 px-4 py-2.5 text-left text-sm sm:text-base
-                      transition last:border-b-0
+                    className={`flex w-full items-center justify-between gap-2 border-b border-slate-800/70 px-4 py-2.5
+                      text-left text-sm sm:text-base transition last:border-b-0
                       ${isActive ? "bg-blue-500/15 text-blue-400" : "text-gray-300 hover:bg-slate-800/80"}`}
                   >
-                    {option.label}
+                    <span className="truncate">{option.label}</span>
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                        isActive
+                          ? "bg-blue-500/20 text-blue-300"
+                          : "bg-slate-700/60 text-gray-400"
+                      }`}
+                    >
+                      {option.count}
+                    </span>
                   </button>
                 );
               })}
@@ -200,6 +320,17 @@ export default function CertificateGrid() {
           )}
         </div>
       </div>
+
+      {/* SMALL CAPTION */}
+      {!error && certificates.length > 0 && (
+        <p className="mt-4 text-center text-xs text-gray-500">
+          {isFeaturedView && !query
+            ? `Showing ${featuredCount} featured of ${certificates.length} certificates`
+            : `${filteredCertificates.length} certificate${filteredCertificates.length === 1 ? "" : "s"}${
+                isFeaturedView && query ? " (searching all)" : ""
+              }`}
+        </p>
+      )}
 
       {/* ERROR */}
       {error && (
@@ -219,23 +350,54 @@ export default function CertificateGrid() {
         </div>
       )}
 
-      {/* GRID — same responsive grid as Projects (sm:2 cols, lg:3 cols) */}
-      {!error && filteredCertificates.length > 0 && (
+      {/* GRID — centered flex-wrap: cards are slim, and an unfinished
+          last row is centered instead of leaving an empty slot */}
+      {!error && shownCertificates.length > 0 && (
         <motion.div
-          key={activeFilter}
+          key={effectiveFilter}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="mt-6 sm:mt-6 md:mt-8 grid items-stretch gap-4 sm:gap-4 md:gap-5 xl:gap-6 sm:auto-rows-fr sm:grid-cols-2 lg:grid-cols-3"
+          className="mt-4 flex flex-wrap justify-center gap-4"
         >
-          {filteredCertificates.map((certificate) => (
+          {shownCertificates.map((certificate) => (
             <CertificateCard
               key={certificate.id}
               certificate={certificate}
-              tags={certificate._tags}
+              domains={certificate._domains}
+              tech={certificate._tech}
+              showStar={!isFeaturedView}
             />
           ))}
         </motion.div>
+      )}
+
+      {/* SHOW MORE (All / domain views) */}
+      {!error && paged && remaining > 0 && (
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+            className="rounded-full border border-slate-700 bg-[#111827] px-6 py-2.5 text-sm font-medium
+              text-gray-300 transition hover:border-blue-500/60 hover:text-blue-400"
+          >
+            Show more ({remaining} left)
+          </button>
+        </div>
+      )}
+
+      {/* VIEW ALL (Featured view) */}
+      {!error && showViewAllButton && (
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={() => setActiveFilter("all")}
+            className="rounded-full border border-blue-500/40 bg-blue-500/10 px-6 py-2.5 text-sm font-medium
+              text-blue-400 transition hover:bg-blue-500/20"
+          >
+            See all {certificates.length} certificates →
+          </button>
+        </div>
       )}
     </div>
   );

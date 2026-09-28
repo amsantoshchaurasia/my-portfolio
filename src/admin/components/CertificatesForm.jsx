@@ -1,67 +1,75 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   createCertificate,
   updateCertificate,
+  getCertificates,
 } from "../../firebase/firestore";
-import { getTechColor, KNOWN_SKILL_TAGS as TAG_SUGGESTIONS } from "../../utils/colors/techColors";
-import { getPlatformColor, COMPANY_SUGGESTIONS } from "../../utils/colors/platformColors";
+import {
+  subscribeCertOptions,
+  addCertOption,
+  deleteCertOption,
+  cleanLabel,
+} from "../../firebase/certOptions";
+import { getTechColor } from "../../utils/colors/techColors";
+import { getPlatformColor } from "../../utils/colors/platformColors";
 import {
   CERTIFICATE_TYPE_FILTER_OPTIONS as CERTIFICATE_TYPES,
   getCertificateTypeBadgeClasses as getCertificateCategoryBadgeClasses,
 } from "../../utils/colors/typeColors";
+import { MONTH_LABELS } from "../../utils/formatIssueDate";
+import {
+  DEFAULTS_BY_KIND,
+  DEFAULT_DOMAINS,
+  MAX_DOMAINS,
+  MAX_TECH,
+} from "../../utils/certificateOptions";
+
+const MONTH_OPTIONS = [
+  { value: "", label: "Month (optional)" },
+  ...MONTH_LABELS.map((label, i) => ({ value: String(i + 1), label })),
+];
 
 // ======================================================
 // INITIAL FORM
+// company = Platform (kept as "company" so the public site keeps working)
 // ======================================================
-// "technical" is the certificate-type default (was "web" before the
-// Project type / Certificate type split — "web" is not a valid
-// certificate type anymore).
 
 const initialForm = {
   title: "",
   company: "",
   category: "technical",
+  domains: [],
+  tech: [],
   year: "",
+  month: "",
+  featured: false,
   order: 1,
-  tags: "",
 };
 
-// ======================================================
-// TAGS
-// ======================================================
-// "Power BI, SQL" -> ["Power BI", "SQL"]  (trimmed, no duplicates)
-function parseTags(value) {
-  const seen = new Set();
+// Old certificates only have "tags". Split them into domain / tech.
+function splitLegacyTags(tags) {
+  const list = Array.isArray(tags)
+    ? tags
+    : String(tags || "").split(",").map((t) => t.trim()).filter(Boolean);
 
-  return String(value || "")
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter((tag) => {
-      const key = tag.toLowerCase();
-      if (!tag || seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-}
+  const domainSet = new Set(DEFAULT_DOMAINS.map((d) => d.toLowerCase()));
+  const domains = [];
+  const tech = [];
 
-// Firestore value (array or string) -> "Power BI, SQL"
-function tagsToString(value) {
-  if (Array.isArray(value)) return value.join(", ");
-  return value || "";
+  list.forEach((tag) => {
+    if (domainSet.has(tag.toLowerCase())) domains.push(tag);
+    else tech.push(tag);
+  });
+
+  return { domains, tech };
 }
 
 // ======================================================
-// LIMITS
+// LIMITS + CLOUDINARY
 // ======================================================
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-// const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB  (thumbnail image - disabled for now)
-
-// ======================================================
-// CLOUDINARY CONFIG
-// ======================================================
-// Replace with your actual Cloudinary Cloud Name if different
 const CLOUD_NAME = "ftdks0h2";
 const UPLOAD_PRESET = "portfolio_upload";
 
@@ -72,10 +80,7 @@ async function uploadToCloudinary(file) {
 
   const response = await fetch(
     `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/raw/upload`,
-    {
-      method: "POST",
-      body: formData,
-    }
+    { method: "POST", body: formData }
   );
 
   const data = await response.json();
@@ -84,17 +89,11 @@ async function uploadToCloudinary(file) {
     throw new Error(data.error?.message || "Failed to upload file to Cloudinary.");
   }
 
-  return {
-    fileUrl: data.secure_url,
-    fileName: file.name,
-  };
+  return { fileUrl: data.secure_url, fileName: file.name };
 }
 
 // ======================================================
-// CUSTOM DROPDOWN — styled to match the public-side filter
-// dropdown (rounded pill button, dark panel, chevron that
-// rotates). Each option renders as its real category badge
-// color instead of a generic highlight.
+// CUSTOM DROPDOWN (used for Type and Month)
 // ======================================================
 
 function SelectDropdown({ value, onChange, options, getBadgeClasses }) {
@@ -131,7 +130,9 @@ function SelectDropdown({ value, onChange, options, getBadgeClasses }) {
             {selected?.label}
           </span>
         ) : (
-          <span className="text-white">{selected?.label}</span>
+          <span className={selected?.value ? "text-white" : "text-gray-500"}>
+            {selected?.label}
+          </span>
         )}
         <svg
           viewBox="0 0 24 24"
@@ -146,13 +147,13 @@ function SelectDropdown({ value, onChange, options, getBadgeClasses }) {
       {open && (
         <ul
           role="listbox"
-          className="absolute z-20 mt-1.5 w-full overflow-hidden rounded-lg border border-slate-700
+          className="absolute z-20 mt-1.5 max-h-60 w-full overflow-y-auto rounded-lg border border-slate-700
             bg-[#0F1729] p-1.5 shadow-lg shadow-black/40"
         >
           {options.map((option) => {
             const isSelected = option.value === value;
             return (
-              <li key={option.value} role="option" aria-selected={isSelected}>
+              <li key={option.value || "none"} role="option" aria-selected={isSelected}>
                 <button
                   type="button"
                   onClick={() => {
@@ -187,9 +188,198 @@ function SelectDropdown({ value, onChange, options, getBadgeClasses }) {
   );
 }
 
-// How many chips are visible before "Show more" / "+N more" is needed.
-const COMPANY_PREVIEW_COUNT = 5;
-const TAG_PREVIEW_COUNT = 5;
+// ======================================================
+// OPTION PICKER (chips + search + add new + delete custom)
+// Used for Platform (single), Domain (max 2), Tech (max 5)
+// ======================================================
+
+const PREVIEW_COUNT = 8;
+
+function OptionPicker({
+  label,
+  hint,
+  placeholder,
+  options, // [{ label, custom }]
+  selected, // string[]
+  max, // number
+  single = false,
+  disabled,
+  getColor,
+  onToggle,
+  onAdd,
+  onDelete,
+  labelClasses,
+  inputClasses,
+}) {
+  const [query, setQuery] = useState("");
+  const [showAll, setShowAll] = useState(false);
+
+  const trimmed = cleanLabel(query);
+  const lowerQuery = trimmed.toLowerCase();
+
+  const selectedLower = selected.map((s) => s.toLowerCase());
+  const isSelected = (name) => selectedLower.includes(name.toLowerCase());
+
+  const filtered = lowerQuery
+    ? options.filter((o) => o.label.toLowerCase().includes(lowerQuery))
+    : options;
+
+  const visible = lowerQuery || showAll ? filtered : filtered.slice(0, PREVIEW_COUNT);
+  const hiddenCount = filtered.length - visible.length;
+
+  const exactMatch = options.some((o) => o.label.toLowerCase() === lowerQuery);
+  const canAdd = Boolean(trimmed) && !exactMatch;
+  const atLimit = !single && selected.length >= max;
+
+  function handleAdd() {
+    if (!canAdd) return;
+    onAdd(trimmed);
+    setQuery("");
+  }
+
+  function handleKeyDown(e) {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+
+    if (canAdd) {
+      handleAdd();
+    } else if (filtered.length === 1) {
+      onToggle(filtered[0].label);
+      setQuery("");
+    }
+  }
+
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center justify-between">
+        <label className={`${labelClasses} !mb-0`}>{label}</label>
+        <span
+          className={`text-[11px] font-medium ${
+            atLimit ? "text-amber-400" : "text-gray-500"
+          }`}
+        >
+          {single ? (selected.length ? "1/1" : "0/1") : `${selected.length}/${max}`}
+        </span>
+      </div>
+
+      {/* SELECTED */}
+      {selected.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-1.5 rounded-lg border border-slate-700 bg-slate-800/40 p-2.5">
+          {selected.map((item) => (
+            <span
+              key={item}
+              className={`flex items-center gap-1.5 rounded-full border bg-white/5 py-1 pl-2.5 pr-1.5 text-[11px] ${getColor(item)}`}
+            >
+              {item}
+              <button
+                type="button"
+                onClick={() => onToggle(item)}
+                disabled={disabled}
+                aria-label={`Remove ${item}`}
+                className="flex h-3.5 w-3.5 items-center justify-center rounded-full opacity-70 transition hover:text-white hover:opacity-100 disabled:cursor-not-allowed"
+              >
+                <svg viewBox="0 0 24 24" className="h-3 w-3 fill-none stroke-current stroke-[3]">
+                  <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* OPTIONS */}
+      <div className="rounded-lg border border-slate-700 bg-slate-800/20 p-2.5">
+        <div className="flex flex-wrap gap-1.5">
+          {visible.map((option) => {
+            const active = isSelected(option.label);
+            const blocked = !active && atLimit;
+
+            return (
+              <span
+                key={option.label}
+                className={`flex shrink-0 items-center rounded-full border text-[11px] font-medium transition ${
+                  active
+                    ? `bg-white/5 ${getColor(option.label)}`
+                    : "border-slate-700 bg-slate-800/60 text-gray-400"
+                } ${blocked ? "opacity-40" : ""}`}
+              >
+                <button
+                  type="button"
+                  onClick={() => onToggle(option.label)}
+                  disabled={disabled || blocked}
+                  aria-pressed={active}
+                  className={`py-1 pl-2.5 ${option.custom ? "pr-1" : "pr-2.5"} disabled:cursor-not-allowed ${
+                    active ? "" : "hover:text-gray-200"
+                  }`}
+                >
+                  {option.label}
+                </button>
+
+                {option.custom && (
+                  <button
+                    type="button"
+                    onClick={() => onDelete(option.label)}
+                    disabled={disabled}
+                    title="Delete this option"
+                    aria-label={`Delete option ${option.label}`}
+                    className="mr-1 flex h-3.5 w-3.5 items-center justify-center rounded-full opacity-50 transition hover:text-red-400 hover:opacity-100 disabled:cursor-not-allowed"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-3 w-3 fill-none stroke-current stroke-[3]">
+                      <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                  </button>
+                )}
+              </span>
+            );
+          })}
+
+          {!lowerQuery && (hiddenCount > 0 || showAll) && (
+            <button
+              type="button"
+              onClick={() => setShowAll((prev) => !prev)}
+              disabled={disabled}
+              aria-expanded={showAll}
+              className="shrink-0 rounded-full border border-dashed border-slate-600 bg-slate-800/40
+                px-2.5 py-1 text-[11px] font-medium text-gray-400 transition hover:border-slate-500 hover:text-gray-200 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {showAll ? "Show less" : `+ ${hiddenCount} more`}
+            </button>
+          )}
+
+          {lowerQuery && filtered.length === 0 && !canAdd && (
+            <span className="text-[11px] text-gray-500">No match.</span>
+          )}
+        </div>
+      </div>
+
+      {/* SEARCH / ADD */}
+      <div className="mt-2 flex gap-2">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          disabled={disabled}
+          className={inputClasses}
+        />
+        {canAdd && (
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={disabled}
+            className="max-w-[45%] shrink-0 truncate rounded-lg border border-blue-500/40 bg-blue-500/10 px-3.5 text-sm
+              font-medium text-blue-400 transition hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            + Add "{trimmed}"
+          </button>
+        )}
+      </div>
+
+      {hint && <p className="mt-1.5 text-[11px] text-gray-600">{hint}</p>}
+    </div>
+  );
+}
 
 // ======================================================
 // COMPONENT
@@ -201,22 +391,53 @@ export default function CertificatesForm({
   onCancelEdit,
 }) {
   const [form, setForm] = useState(initialForm);
-
   const [file, setFile] = useState(null);
-
   const [loading, setLoading] = useState(false);
-
   const [message, setMessage] = useState("");
-
   const [error, setError] = useState("");
 
-  // Preview pickers — collapsed to a short row by default,
-  // "Show more" / "+N more" expands the full list.
-  const [showAllCompanies, setShowAllCompanies] = useState(false);
-  const [showAllTags, setShowAllTags] = useState(false);
+  // custom options saved in Firestore
+  const [customOptions, setCustomOptions] = useState({
+    platform: [],
+    domain: [],
+    tech: [],
+  });
 
-  // Free-typed custom tag, added via the box below the picker.
-  const [customTag, setCustomTag] = useState("");
+  // ======================================================
+  // LOAD CUSTOM OPTIONS (live)
+  // ======================================================
+
+  useEffect(() => {
+    const unsubscribe = subscribeCertOptions(setCustomOptions, () =>
+      setError(
+        "Could not load saved options. Check the Firestore rules for the 'certOptions' collection."
+      )
+    );
+    return unsubscribe;
+  }, []);
+
+  // defaults + custom, no duplicates (case-insensitive)
+  const optionsByKind = useMemo(() => {
+    const result = {};
+
+    ["platform", "domain", "tech"].forEach((kind) => {
+      const defaults = DEFAULTS_BY_KIND[kind];
+      const seen = new Set(defaults.map((d) => d.toLowerCase()));
+
+      const list = defaults.map((label) => ({ label, custom: false }));
+
+      customOptions[kind].forEach((label) => {
+        if (!seen.has(label.toLowerCase())) {
+          seen.add(label.toLowerCase());
+          list.push({ label, custom: true });
+        }
+      });
+
+      result[kind] = list;
+    });
+
+    return result;
+  }, [customOptions]);
 
   // ======================================================
   // EDIT MODE
@@ -224,13 +445,27 @@ export default function CertificatesForm({
 
   useEffect(() => {
     if (editingCertificate) {
+      const hasNewFields =
+        Array.isArray(editingCertificate.domains) ||
+        Array.isArray(editingCertificate.tech);
+
+      const { domains, tech } = hasNewFields
+        ? {
+            domains: editingCertificate.domains || [],
+            tech: editingCertificate.tech || [],
+          }
+        : splitLegacyTags(editingCertificate.tags);
+
       setForm({
         title: editingCertificate.title || "",
         company: editingCertificate.company || "",
         category: editingCertificate.category || "technical",
+        domains,
+        tech,
         year: editingCertificate.year || "",
+        month: editingCertificate.month ? String(editingCertificate.month) : "",
+        featured: Boolean(editingCertificate.featured),
         order: editingCertificate.order || 1,
-        tags: tagsToString(editingCertificate.tags),
       });
 
       setFile(null);
@@ -239,97 +474,120 @@ export default function CertificatesForm({
       setFile(null);
     }
 
-    setCustomTag("");
-    setShowAllCompanies(false);
-    setShowAllTags(false);
     setMessage("");
     setError("");
   }, [editingCertificate]);
 
   // ======================================================
-  // INPUT CHANGE
+  // SIMPLE CHANGES
   // ======================================================
 
   function handleChange(event) {
     const { name, value } = event.target;
-
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   }
 
   function handleCategoryChange(value) {
     setForm((prev) => ({ ...prev, category: value }));
   }
 
+  function handleMonthChange(value) {
+    setForm((prev) => ({ ...prev, month: value }));
+  }
+
+  function toggleFeatured() {
+    setForm((prev) => ({ ...prev, featured: !prev.featured }));
+  }
+
   // ======================================================
-  // COMPANY QUICK-PICK — clicking a suggestion fills the field
-  // (clicking the active one again clears it); typing a name
-  // that isn't in the list keeps it as-is, still gets a
-  // consistent color via getPlatformColor.
+  // OPTION PICKERS
   // ======================================================
 
-  function selectCompany(company) {
+  function togglePlatform(label) {
     setForm((prev) => ({
       ...prev,
-      company: prev.company.trim().toLowerCase() === company.toLowerCase() ? "" : company,
+      company: prev.company.toLowerCase() === label.toLowerCase() ? "" : label,
     }));
   }
 
-  // ======================================================
-  // TAG QUICK-PICK (toggle a suggestion on / off)
-  // ======================================================
+  function toggleInList(field, max) {
+    return (label) => {
+      setForm((prev) => {
+        const current = prev[field];
+        const exists = current.some((item) => item.toLowerCase() === label.toLowerCase());
 
-  function toggleTag(tag) {
-    setForm((prev) => {
-      const current = parseTags(prev.tags);
-      const exists = current.some(
-        (item) => item.toLowerCase() === tag.toLowerCase()
-      );
+        if (exists) {
+          return {
+            ...prev,
+            [field]: current.filter((item) => item.toLowerCase() !== label.toLowerCase()),
+          };
+        }
 
-      const next = exists
-        ? current.filter((item) => item.toLowerCase() !== tag.toLowerCase())
-        : [...current, tag];
-
-      return { ...prev, tags: next.join(", ") };
-    });
+        if (current.length >= max) return prev;
+        return { ...prev, [field]: [...current, label] };
+      });
+    };
   }
 
-  function removeTag(tag) {
-    setForm((prev) => ({
-      ...prev,
-      tags: parseTags(prev.tags)
-        .filter((item) => item !== tag)
-        .join(", "),
-    }));
-  }
+  const toggleDomain = toggleInList("domains", MAX_DOMAINS);
+  const toggleTech = toggleInList("tech", MAX_TECH);
 
-  // For a skill/platform not in the suggestions above. Still
-  // gets a consistent color from getTechColor automatically.
-  function handleAddCustomTag() {
-    const value = customTag.trim();
-    if (!value) return;
-
-    const current = parseTags(form.tags);
-    const alreadyAdded = current.some(
-      (item) => item.toLowerCase() === value.toLowerCase()
+  // Add a new option: reuse it if it already exists (any spelling case),
+  // otherwise save it to Firestore. Then select it.
+  async function handleAddOption(kind, label, select) {
+    const existing = optionsByKind[kind].find(
+      (o) => o.label.toLowerCase() === label.toLowerCase()
     );
 
-    if (!alreadyAdded) {
-      setForm((prev) => ({
-        ...prev,
-        tags: [...current, value].join(", "),
-      }));
+    if (existing) {
+      select(existing.label);
+      return;
     }
 
-    setCustomTag("");
+    select(label);
+
+    try {
+      await addCertOption(kind, label);
+    } catch (err) {
+      console.error("Add option failed:", err);
+      setError(
+        "The option is selected, but it could not be saved for next time. Check the Firestore rules for 'certOptions'."
+      );
+    }
   }
 
-  function handleCustomTagKeyDown(e) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleAddCustomTag();
+  // Delete a custom option, but only if no certificate uses it.
+  async function handleDeleteOption(kind, label) {
+    setError("");
+    setMessage("");
+
+    try {
+      const all = await getCertificates();
+      const lower = label.toLowerCase();
+
+      const used = all.some((c) => {
+        if (kind === "platform") return String(c.company || "").toLowerCase() === lower;
+
+        const field = kind === "domain" ? c.domains : c.tech;
+        const inField = (field || []).some((x) => String(x).toLowerCase() === lower);
+        const inLegacyTags = (Array.isArray(c.tags) ? c.tags : []).some(
+          (x) => String(x).toLowerCase() === lower
+        );
+
+        return inField || inLegacyTags;
+      });
+
+      if (used) {
+        setError(`"${label}" is used in a certificate, so it can't be deleted.`);
+        return;
+      }
+
+      if (!window.confirm(`Delete the option "${label}"?`)) return;
+
+      await deleteCertOption(kind, label);
+    } catch (err) {
+      console.error("Delete option failed:", err);
+      setError("Could not delete the option. Please try again.");
     }
   }
 
@@ -348,38 +606,22 @@ export default function CertificatesForm({
       return;
     }
 
-    // ----------------------------------------------------
-    // PDF CHECK
-    // ----------------------------------------------------
-
     if (
       selectedFile.type !== "application/pdf" &&
       !selectedFile.name.toLowerCase().endsWith(".pdf")
     ) {
       setError("Only PDF certificate files are allowed.");
-
       event.target.value = "";
       setFile(null);
-
       return;
     }
-
-    // ----------------------------------------------------
-    // FILE SIZE CHECK
-    // ----------------------------------------------------
 
     if (selectedFile.size > MAX_FILE_SIZE) {
       setError("Certificate PDF must be smaller than 10 MB.");
-
       event.target.value = "";
       setFile(null);
-
       return;
     }
-
-    // ----------------------------------------------------
-    // VALID FILE
-    // ----------------------------------------------------
 
     setFile(selectedFile);
   }
@@ -389,28 +631,16 @@ export default function CertificatesForm({
   // ======================================================
 
   function validateForm() {
-    if (!form.title.trim()) {
-      return "Certificate title is required.";
-    }
+    if (!form.title.trim()) return "Certificate title is required.";
+    if (!form.company.trim()) return "Platform is required.";
+    if (form.domains.length === 0) return "Pick at least one domain.";
+    if (!form.year.trim()) return "Year is required.";
+    if (!/^\d{4}$/.test(form.year.trim())) return "Please enter a valid 4-digit year.";
+    if (!editingCertificate && !file) return "Please upload the certificate PDF.";
+    if (Number(form.order) < 1) return "Display order must be at least 1.";
 
-    if (!form.company.trim()) {
-      return "Company / issuer is required.";
-    }
-
-    if (!form.year.trim()) {
-      return "Year is required.";
-    }
-
-    if (!/^\d{4}$/.test(form.year.trim())) {
-      return "Please enter a valid 4-digit year.";
-    }
-
-    if (!editingCertificate && !file) {
-      return "Please upload the certificate PDF.";
-    }
-
-    if (Number(form.order) < 1) {
-      return "Display order must be at least 1.";
+    if (form.featured && form.category === "other") {
+      return "A featured certificate can't be type 'Other'. Pick a specific type.";
     }
 
     return "";
@@ -423,16 +653,10 @@ export default function CertificatesForm({
   async function handleSubmit(event) {
     event.preventDefault();
 
-    if (loading) {
-      return;
-    }
+    if (loading) return;
 
     setMessage("");
     setError("");
-
-    // ----------------------------------------------------
-    // VALIDATE
-    // ----------------------------------------------------
 
     const validationError = validateForm();
 
@@ -444,22 +668,19 @@ export default function CertificatesForm({
     setLoading(true);
 
     try {
-      // ==================================================
-      // COMMON CERTIFICATE DATA
-      // ==================================================
-
-      let certificateData = {
+      const certificateData = {
         title: form.title.trim(),
-        company: form.company.trim(),
-        category: form.category || "other",
+        company: form.company.trim(), // Platform
+        category: form.category || "other", // Type
+        domains: form.domains,
+        tech: form.tech,
+        // "tags" is kept (domains + tech) so the public site and AI chatbot keep working
+        tags: [...form.domains, ...form.tech],
         year: form.year.trim(),
+        month: form.month ? Number(form.month) : null,
+        featured: form.featured,
         order: Number(form.order) || 1,
-        tags: parseTags(form.tags),
       };
-
-      // ==================================================
-      // UPLOAD NEW PDF TO CLOUDINARY IF SELECTED
-      // ==================================================
 
       if (file) {
         const uploadedFile = await uploadToCloudinary(file);
@@ -467,53 +688,26 @@ export default function CertificatesForm({
         certificateData.fileName = uploadedFile.fileName;
       }
 
-      // ==================================================
-      // CREATE NEW CERTIFICATE
-      // ==================================================
-
       if (!editingCertificate) {
         await createCertificate(certificateData);
         setMessage("Certificate uploaded successfully.");
-      }
-
-      // ==================================================
-      // EDIT EXISTING CERTIFICATE
-      // ==================================================
-
-      else {
+      } else {
         await updateCertificate(editingCertificate.id, certificateData);
         setMessage("Certificate updated successfully.");
       }
 
-      // ==================================================
-      // RESET FORM
-      // ==================================================
-
       setForm(initialForm);
       setFile(null);
-      setCustomTag("");
-
-      // ==================================================
-      // CLEAR FILE INPUTS
-      // ==================================================
 
       const fileInput = document.getElementById("certificate-pdf");
-      if (fileInput) {
-        fileInput.value = "";
-      }
-
-      // ==================================================
-      // REFRESH ADMIN LIST & EXIT EDIT
-      // ==================================================
+      if (fileInput) fileInput.value = "";
 
       onCertificateSaved?.();
 
-      if (editingCertificate) {
-        onCancelEdit?.();
-      }
-    } catch (error) {
-      console.error("Certificate save error:", error);
-      setError(error?.message || "Failed to save certificate. Please try again.");
+      if (editingCertificate) onCancelEdit?.();
+    } catch (err) {
+      console.error("Certificate save error:", err);
+      setError(err?.message || "Failed to save certificate. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -524,32 +718,24 @@ export default function CertificatesForm({
   // ======================================================
 
   function handleCancel() {
-    if (loading) {
-      return;
-    }
+    if (loading) return;
 
     setForm(initialForm);
     setFile(null);
-    setCustomTag("");
-
     setMessage("");
     setError("");
 
     const fileInput = document.getElementById("certificate-pdf");
-    if (fileInput) {
-      fileInput.value = "";
-    }
+    if (fileInput) fileInput.value = "";
 
     onCancelEdit?.();
   }
 
   // ======================================================
-  // EDIT STATE
+  // DERIVED STATE
   // ======================================================
 
   const isEditing = Boolean(editingCertificate);
-
-  const selectedTags = parseTags(form.tags);
 
   const labelClasses = "mb-1.5 block text-xs font-medium text-gray-400";
 
@@ -558,19 +744,6 @@ export default function CertificatesForm({
     "text-sm text-white placeholder:text-gray-500 outline-none transition " +
     "focus:border-blue-500 focus:bg-slate-800 focus:ring-1 focus:ring-blue-500/30 " +
     "disabled:cursor-not-allowed disabled:opacity-60";
-
-  // Company picker derived state
-  const visibleCompanies = showAllCompanies
-    ? COMPANY_SUGGESTIONS
-    : COMPANY_SUGGESTIONS.slice(0, COMPANY_PREVIEW_COUNT);
-  const hiddenCompanyCount = COMPANY_SUGGESTIONS.length - COMPANY_PREVIEW_COUNT;
-  const trimmedCompany = form.company.trim();
-
-  // Tags picker derived state
-  const visibleTags = showAllTags
-    ? TAG_SUGGESTIONS
-    : TAG_SUGGESTIONS.slice(0, TAG_PREVIEW_COUNT);
-  const hiddenTagCount = TAG_SUGGESTIONS.length - TAG_PREVIEW_COUNT;
 
   // ======================================================
   // UI
@@ -588,116 +761,50 @@ export default function CertificatesForm({
         </p>
       </div>
 
-      {/* SUCCESS MESSAGE */}
       {message && (
         <div className="rounded-lg border border-green-500/25 bg-green-500/10 px-3.5 py-2.5 text-xs text-green-400">
           {message}
         </div>
       )}
 
-      {/* ERROR MESSAGE */}
       {error && (
         <div className="rounded-lg border border-red-500/25 bg-red-500/10 px-3.5 py-2.5 text-xs text-red-400">
           {error}
         </div>
       )}
 
-      {/* TITLE + COMPANY */}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <label className={labelClasses}>Certificate title</label>
-          <input
-            type="text"
-            name="title"
-            value={form.title}
-            onChange={handleChange}
-            placeholder="BCG Data Science Job Simulation"
-            disabled={loading}
-            className={inputClasses}
-          />
-        </div>
-
-        <div>
-          <label className={labelClasses}>Company / Issuer</label>
-          <input
-            type="text"
-            name="company"
-            value={form.company}
-            onChange={handleChange}
-            placeholder="Forage"
-            disabled={loading}
-            className={inputClasses}
-          />
-        </div>
+      {/* TITLE */}
+      <div>
+        <label className={labelClasses}>Certificate title</label>
+        <input
+          type="text"
+          name="title"
+          value={form.title}
+          onChange={handleChange}
+          placeholder="BCG Data Science Job Simulation"
+          disabled={loading}
+          className={inputClasses}
+        />
       </div>
 
-      {/* COMPANY / PLATFORM PICKER — each issuer uses the exact
-          same color it has on the public portfolio. Preview of 5,
-          "+N more" expands the full list. Typing a name not in the
-          list still gets its own consistent color automatically. */}
-      <div className="rounded-lg border border-slate-700 bg-slate-800/20 p-2.5">
-        <div className="flex flex-wrap gap-1.5">
-          {visibleCompanies.map((company) => {
-            const active = trimmedCompany.toLowerCase() === company.toLowerCase();
-            const colorClasses = getPlatformColor(company);
+      {/* PLATFORM */}
+      <OptionPicker
+        label="Platform"
+        placeholder="Search or add a platform..."
+        options={optionsByKind.platform}
+        selected={form.company ? [form.company] : []}
+        max={1}
+        single
+        disabled={loading}
+        getColor={getPlatformColor}
+        onToggle={togglePlatform}
+        onAdd={(label) => handleAddOption("platform", label, (v) => setForm((p) => ({ ...p, company: v })))}
+        onDelete={(label) => handleDeleteOption("platform", label)}
+        labelClasses={labelClasses}
+        inputClasses={inputClasses}
+      />
 
-            return (
-              <button
-                key={company}
-                type="button"
-                onClick={() => selectCompany(company)}
-                disabled={loading}
-                aria-pressed={active}
-                className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                  active
-                    ? `bg-white/5 ${colorClasses}`
-                    : "border-slate-700 bg-slate-800/60 text-gray-400 hover:border-slate-600 hover:text-gray-200"
-                }`}
-              >
-                {company}
-              </button>
-            );
-          })}
-
-          {hiddenCompanyCount > 0 && (
-            <button
-              type="button"
-              onClick={() => setShowAllCompanies((prev) => !prev)}
-              disabled={loading}
-              aria-expanded={showAllCompanies}
-              className="shrink-0 rounded-full border border-dashed border-slate-600 bg-slate-800/40
-                px-2.5 py-1 text-[11px] font-medium text-gray-400 transition hover:border-slate-500 hover:text-gray-200 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {showAllCompanies ? "Show less" : `+ ${hiddenCompanyCount} more`}
-            </button>
-          )}
-
-          {trimmedCompany && !visibleCompanies.some((c) => c.toLowerCase() === trimmedCompany.toLowerCase()) && (
-            <span
-              className={`flex shrink-0 items-center gap-1.5 rounded-full border bg-white/5 py-1 pl-2.5 pr-1.5 text-[11px] ${getPlatformColor(trimmedCompany)}`}
-            >
-              {trimmedCompany}
-              <button
-                type="button"
-                onClick={() => setForm((prev) => ({ ...prev, company: "" }))}
-                disabled={loading}
-                aria-label={`Clear ${trimmedCompany}`}
-                className="flex h-3.5 w-3.5 items-center justify-center rounded-full opacity-70 transition hover:text-white hover:opacity-100 disabled:cursor-not-allowed"
-              >
-                <svg viewBox="0 0 24 24" className="h-3 w-3 fill-none stroke-current stroke-[3]">
-                  <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
-                </svg>
-              </button>
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* CERTIFICATE TYPE — custom dropdown, each option colored
-          exactly like its badge on the public portfolio. Uses its
-          own independent list (Technical / Internship / Course /
-          Professional / Soft Skills / Other) — separate from the
-          Project type list. */}
+      {/* TYPE */}
       <div className="sm:max-w-xs">
         <label className={labelClasses}>Certificate type</label>
         <SelectDropdown
@@ -708,113 +815,51 @@ export default function CertificatesForm({
         />
       </div>
 
-      {/* TAGS / SKILLS */}
-      <div>
-        <label className={labelClasses}>Skills / Tags</label>
+      {/* DOMAIN */}
+      <OptionPicker
+        label="Domain"
+        placeholder="Search or add a domain..."
+        hint="The topic of the certificate. This becomes the main filter on your portfolio."
+        options={optionsByKind.domain}
+        selected={form.domains}
+        max={MAX_DOMAINS}
+        disabled={loading}
+        getColor={getTechColor}
+        onToggle={toggleDomain}
+        onAdd={(label) => handleAddOption("domain", label, toggleDomain)}
+        onDelete={(label) => handleDeleteOption("domain", label)}
+        labelClasses={labelClasses}
+        inputClasses={inputClasses}
+      />
 
-        {/* SELECTED CHIPS — each tag uses the exact same color it
-            has on the public portfolio, known or custom-typed */}
-        {selectedTags.length > 0 && (
-          <div className="mb-2.5 flex flex-wrap gap-1.5 rounded-lg border border-slate-700 bg-slate-800/40 p-2.5">
-            {selectedTags.map((tag) => {
-              const colorClasses = getTechColor(tag);
-              return (
-                <span
-                  key={tag}
-                  className={`flex items-center gap-1.5 rounded-full border bg-white/5 py-1 pl-2.5 pr-1.5 text-[11px] ${colorClasses}`}
-                >
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={() => removeTag(tag)}
-                    disabled={loading}
-                    aria-label={`Remove ${tag}`}
-                    className="flex h-3.5 w-3.5 items-center justify-center rounded-full opacity-70 transition hover:text-white hover:opacity-100 disabled:cursor-not-allowed"
-                  >
-                    <svg viewBox="0 0 24 24" className="h-3 w-3 fill-none stroke-current stroke-[3]">
-                      <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
-                    </svg>
-                  </button>
-                </span>
-              );
-            })}
-          </div>
-        )}
+      {/* TECH / TOOLS */}
+      <OptionPicker
+        label="Tech / Tools"
+        placeholder="Search or add a tool..."
+        hint="Languages, tools and libraries used, like Python, SQL or Power BI."
+        options={optionsByKind.tech}
+        selected={form.tech}
+        max={MAX_TECH}
+        disabled={loading}
+        getColor={getTechColor}
+        onToggle={toggleTech}
+        onAdd={(label) => handleAddOption("tech", label, toggleTech)}
+        onDelete={(label) => handleDeleteOption("tech", label)}
+        labelClasses={labelClasses}
+        inputClasses={inputClasses}
+      />
 
-        {/* PICKER — known skills, click to toggle. Preview of 5,
-            "+N more" expands the full list. Selected chips light
-            up in their real portfolio color. */}
-        <div className="rounded-lg border border-slate-700 bg-slate-800/20 p-2.5">
-          <div className="flex flex-wrap gap-1.5">
-            {visibleTags.map((tag) => {
-              const active = selectedTags.some(
-                (item) => item.toLowerCase() === tag.toLowerCase()
-              );
-              const colorClasses = getTechColor(tag);
-
-              return (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => toggleTag(tag)}
-                  disabled={loading}
-                  aria-pressed={active}
-                  className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                    active
-                      ? `bg-white/5 ${colorClasses}`
-                      : "border-slate-700 bg-slate-800/60 text-gray-400 hover:border-slate-600 hover:text-gray-200"
-                  }`}
-                >
-                  {tag}
-                </button>
-              );
-            })}
-
-            {hiddenTagCount > 0 && (
-              <button
-                type="button"
-                onClick={() => setShowAllTags((prev) => !prev)}
-                disabled={loading}
-                aria-expanded={showAllTags}
-                className="shrink-0 rounded-full border border-dashed border-slate-600 bg-slate-800/40
-                  px-2.5 py-1 text-[11px] font-medium text-gray-400 transition hover:border-slate-500 hover:text-gray-200 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {showAllTags ? "Show less" : `+ ${hiddenTagCount} more`}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* CUSTOM TAG — for a skill/platform not in the list above */}
-        <div className="mt-2 flex gap-2">
-          <input
-            type="text"
-            value={customTag}
-            onChange={(e) => setCustomTag(e.target.value)}
-            onKeyDown={handleCustomTagKeyDown}
-            placeholder="Not in the list? Type here..."
-            disabled={loading}
-            className={inputClasses}
+      {/* MONTH / YEAR / ORDER */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div>
+          <label className={labelClasses}>Month</label>
+          <SelectDropdown
+            value={form.month}
+            onChange={handleMonthChange}
+            options={MONTH_OPTIONS}
           />
-          <button
-            type="button"
-            onClick={handleAddCustomTag}
-            disabled={loading}
-            className="shrink-0 rounded-lg border border-slate-700 bg-slate-800/60 px-4 text-sm
-              font-medium text-gray-300 transition hover:border-blue-500/40 hover:text-blue-400 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Add
-          </button>
         </div>
 
-        <p className="mt-1.5 text-[11px] text-gray-600">
-          These become the filter tabs on your portfolio. Anything you type that isn't in the
-          list still gets its own consistent color automatically, same as on your portfolio.
-        </p>
-      </div>
-
-      {/* YEAR / ORDER */}
-      <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <label className={labelClasses}>Year</label>
           <input
@@ -843,6 +888,35 @@ export default function CertificatesForm({
         </div>
       </div>
 
+      {/* FEATURED TOGGLE */}
+      <button
+        type="button"
+        onClick={toggleFeatured}
+        disabled={loading}
+        aria-pressed={form.featured}
+        className={`flex w-full items-center gap-3 rounded-lg border px-3.5 py-3 text-left transition
+          disabled:cursor-not-allowed disabled:opacity-60 ${
+            form.featured
+              ? "border-amber-400/40 bg-amber-400/10"
+              : "border-slate-700 bg-slate-800/40 hover:border-slate-600"
+          }`}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className={`h-5 w-5 shrink-0 stroke-current stroke-2 ${
+            form.featured ? "fill-current text-amber-400" : "fill-none text-gray-500"
+          }`}
+        >
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+        <span>
+          <span className="block text-sm font-medium text-white">Featured certificate</span>
+          <span className="block text-[11px] text-gray-500">
+            Only featured certificates show by default on your portfolio (6 is ideal).
+          </span>
+        </span>
+      </button>
+
       {/* PDF UPLOAD */}
       <div>
         <label htmlFor="certificate-pdf" className={labelClasses}>
@@ -850,7 +924,6 @@ export default function CertificatesForm({
         </label>
 
         <div className="rounded-lg border border-dashed border-slate-700 bg-slate-800/30 p-3.5">
-          {/* CURRENT FILE */}
           {isEditing && editingCertificate.fileName && (
             <div className="mb-3 rounded-lg border border-blue-500/20 bg-blue-500/5 px-3 py-2.5">
               <p className="text-[10px] uppercase tracking-wider text-gray-500">
@@ -865,7 +938,6 @@ export default function CertificatesForm({
             </div>
           )}
 
-          {/* FILE INPUT */}
           <input
             id="certificate-pdf"
             type="file"
@@ -885,7 +957,6 @@ export default function CertificatesForm({
             </p>
           )}
 
-          {/* SELECTED FILE */}
           {file && (
             <div className="mt-3 rounded-lg border border-green-500/20 bg-green-500/5 px-3 py-2.5">
               <p className="text-[11px] text-gray-500">Selected file</p>
