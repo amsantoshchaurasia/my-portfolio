@@ -3,17 +3,21 @@ import { FiExternalLink, FiFileText, FiLoader, FiStar } from "react-icons/fi";
 
 import { getCertificateFileURL } from "../../firebase/storage";
 import {
-  getCertificateCategoryLabel,
-  getCertificateCategoryBadgeClasses,
-  getTechColor,
-} from "./certificateTypeUtils";
+  getCertificateTypeLabel,
+  getCertificateTypeBadgeClasses,
+} from "../../utils/colors/typeColors";
+import { getTechColor } from "../../utils/colors/techColors";
+import { getPlatformColor } from "../../utils/colors/platformColors";
 import { formatIssueDate } from "../../utils/formatIssueDate";
+
+const pillClasses =
+  "rounded-full border bg-slate-800/60 px-2.5 py-1 sm:px-3 text-xs font-medium";
 
 export default function CertificateCard({
   certificate,
-  domains = [],
-  tech = [],
+  tech,
   showStar = false,
+  // `domains` is no longer used here (domain is only for filtering).
 }) {
   const [fileUrl, setFileUrl] = useState(null);
   const [loadingFile, setLoadingFile] = useState(true);
@@ -65,150 +69,169 @@ export default function CertificateCard({
   // DERIVED
   // ======================================================
 
-  const company = certificate?.company || "";
+  const platform = certificate?.company || "";
   const issueDate = formatIssueDate(certificate);
+  const allTech = Array.isArray(tech) ? tech : certificate?.tech || [];
 
   // ======================================================
-  // UI
+  // UI — same container, header and title style as ProjectCard
   //
-  //  ┃ BCG Data Science Job Simulation                    [↗]
-  //  ┃ Forage · [Virtual Internship] · [Data Science]  Sep 2026
-  //  ┃ [Python] [SQL] [Power BI] [Excel] [Tableau]
-  //
-  //  Line 1  title (one line) + open-certificate button
-  //  Line 2  platform · type · all domains ....... date (right)
-  //  Line 3  all tech chips (wrap to a new row only if the card is narrow)
-  //
-  //  Every card has the same minimum height, so the grid stays tidy.
+  //  CERTIFICATE [Virtual Internship]              [Sep 2026]
+  //  Title
+  //  (Python) (SQL) (Power BI) (Excel)        <- every tool, never hidden
+  //  ────────────────────────────────────
+  //  (Forage)               View Certificate ↗
   // ======================================================
 
   return (
     <div
       className="
-        group
-        relative
-        flex
-        min-h-[112px]
         w-full
         sm:w-[calc(50%_-_0.5rem)]
         lg:w-[calc(33.333%_-_0.667rem)]
-        flex-col
-        justify-between
-        gap-2.5
-        rounded-xl
+
+        rounded-2xl
+        sm:rounded-3xl
+        bg-[#111827]
         border
-        border-slate-800
-        bg-slate-900/60
-        py-3.5
-        pl-5
-        pr-3.5
-        transition-colors
-        duration-200
-        hover:border-slate-600
+        border-slate-700
+        p-4
+        sm:p-5
+        md:p-6
+
+        flex
+        flex-col
+
+        transition-all
+        duration-300
+        hover:-translate-y-2
+        hover:border-blue-500
+        hover:shadow-[0_0_35px_rgba(37,99,235,.25)]
       "
     >
-      {/* Accent line */}
-      <span
-        aria-hidden="true"
-        className="absolute inset-y-3 left-0 w-[3px] rounded-r-full bg-gradient-to-b from-blue-500 to-indigo-500/60"
-      />
+      <div className="flex flex-col h-full">
+        {/* Header */}
 
-      {/* LINE 1 — title + open button */}
-      <div className="flex items-start justify-between gap-3">
-        <h3
-          title={certificate?.title}
-          className="min-w-0 flex-1 truncate pt-1 text-[15px] font-semibold leading-tight text-white"
-        >
-          {showStar && certificate?.featured && (
-            <FiStar
-              size={13}
-              aria-label="Featured"
-              className="mr-1.5 inline-block -translate-y-px fill-amber-400 text-amber-400"
-            />
-          )}
-          {certificate?.title}
-        </h3>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+            {showStar && certificate?.featured && (
+              <FiStar
+                size={13}
+                aria-label="Featured"
+                className="shrink-0 fill-amber-400 text-amber-400"
+              />
+            )}
 
-        <div className="shrink-0">
-          {loadingFile ? (
-            <span className="flex h-8 w-8 items-center justify-center text-gray-500">
-              <FiLoader size={14} className="animate-spin" />
+            {/* Hidden on phones: the section title already says "Certificates" */}
+            <span className="hidden sm:inline uppercase tracking-[4px] text-xs text-gray-500">
+              Certificate
             </span>
-          ) : fileUrl ? (
-            <a
-              href={fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="View certificate"
-              aria-label={`View certificate: ${certificate?.title || ""}`}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-800/40
-                text-gray-300 transition hover:border-blue-500/60 hover:bg-blue-500/10 hover:text-blue-300
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50"
-            >
-              <FiExternalLink size={14} />
-            </a>
-          ) : (
-            <span
-              title="Certificate unavailable"
-              className="flex h-8 w-8 items-center justify-center text-gray-600"
-            >
-              <FiFileText size={14} />
-            </span>
-          )}
-        </div>
-      </div>
 
-      <div className="space-y-2">
-        {/* LINE 2 — platform · type · domains ........ date */}
-        <div className="flex items-center gap-2 text-xs">
-          {company && (
             <span
-              className="min-w-0 max-w-[34%] truncate font-medium text-gray-300"
-              title={company}
-            >
-              {company}
-            </span>
-          )}
-
-          <span
-            className={`shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold ${getCertificateCategoryBadgeClasses(
-              certificate?.category
-            )}`}
-          >
-            {getCertificateCategoryLabel(certificate?.category)}
-          </span>
-
-          {domains.map((domain) => (
-            <span
-              key={domain}
-              title={domain}
-              className={`min-w-0 truncate rounded-md border bg-white/5 px-1.5 py-0.5 text-[10px] font-semibold ${getTechColor(
-                domain
+              className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-medium ${getCertificateTypeBadgeClasses(
+                certificate?.category
               )}`}
             >
-              {domain}
+              {getCertificateTypeLabel(certificate?.category)}
             </span>
-          ))}
+          </div>
 
           {issueDate && (
-            <span className="ml-auto shrink-0 pl-1 tabular-nums text-gray-500">
+            <span className="shrink-0 bg-blue-600/20 text-blue-400 text-xs sm:text-sm px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full">
               {issueDate}
             </span>
           )}
         </div>
 
-        {/* LINE 3 — all tech chips (space is reserved even when there are none) */}
-        <div className="flex min-h-[22px] flex-wrap items-center gap-1.5">
-          {tech.map((item) => (
-            <span
-              key={item}
-              title={item}
-              className="max-w-[140px] truncate rounded-md border border-slate-700/70 bg-slate-800/50
-                px-2 py-0.5 text-[11px] font-medium text-gray-300"
-            >
-              {item}
-            </span>
-          ))}
+        {/* Title */}
+
+        <h3
+          title={certificate?.title}
+          className="
+            mt-3
+            sm:mt-4
+            md:mt-5
+            lg:mt-3
+            xl:mt-5
+            text-lg
+            sm:text-xl
+            md:text-2xl
+            lg:text-xl
+            xl:text-xl
+            font-bold
+            leading-tight
+            line-clamp-2
+          "
+        >
+          {certificate?.title}
+        </h3>
+
+        {/* Flexible spacer — keeps the tech row + footer pinned to the
+            bottom so every card in a row lines up */}
+        <div className="flex-1" />
+
+        {/* Tech pills — all of them are shown */}
+
+        {allTech.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-4 sm:mt-5">
+            {allTech.map((item) => (
+              <span
+                key={item}
+                title={item}
+                className={`${pillClasses} max-w-[160px] truncate ${getTechColor(item)}`}
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Footer — platform (left) + link (right) */}
+
+        <div className="mt-4 sm:mt-5 flex items-center justify-between gap-3 border-t border-slate-700/70 pt-3 sm:pt-4">
+          <div className="min-w-0">
+            {platform && (
+              <span
+                title={platform}
+                className={`${pillClasses} block max-w-full truncate ${getPlatformColor(
+                  platform
+                )}`}
+              >
+                {platform}
+              </span>
+            )}
+          </div>
+
+          <div className="shrink-0">
+            {loadingFile ? (
+              <span className="inline-flex items-center gap-2 text-sm text-gray-500">
+                <FiLoader size={14} className="animate-spin" />
+                Loading...
+              </span>
+            ) : fileUrl ? (
+              <a
+                href={fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`View certificate: ${certificate?.title || ""}`}
+                className="group inline-flex items-center gap-1.5 rounded text-sm font-semibold text-blue-400
+                  underline underline-offset-4 decoration-blue-400/40 transition-colors
+                  hover:text-cyan-300 hover:decoration-cyan-300
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50"
+              >
+                <span>View Certificate</span>
+                <FiExternalLink
+                  size={14}
+                  className="shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                />
+              </a>
+            ) : (
+              <span className="inline-flex items-center gap-2 text-sm text-gray-600">
+                <FiFileText size={14} />
+                Unavailable
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>

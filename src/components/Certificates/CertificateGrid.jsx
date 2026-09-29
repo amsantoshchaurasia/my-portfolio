@@ -216,14 +216,14 @@ export default function CertificateGrid() {
   const showViewAllButton =
     isFeaturedView && !query && certificates.length > featuredCount;
 
-  // LOADING (slim skeletons)
+  // LOADING (skeletons shaped like the certificate card)
   if (loading) {
     return (
       <div className="mt-6 flex flex-wrap justify-center gap-4 md:mt-8">
         {[1, 2, 3].map((item) => (
           <div
             key={item}
-            className="h-[112px] w-full animate-pulse rounded-xl border border-slate-800 bg-slate-900/70
+            className="h-[220px] w-full animate-pulse rounded-2xl border border-slate-700 bg-[#111827]
               sm:w-[calc(50%_-_0.5rem)] lg:w-[calc(33.333%_-_0.667rem)]"
           />
         ))}
@@ -350,8 +350,8 @@ export default function CertificateGrid() {
         </div>
       )}
 
-      {/* GRID — centered flex-wrap: cards are slim, and an unfinished
-          last row is centered instead of leaving an empty slot */}
+      {/* GRID — centered flex-wrap: an unfinished last row is centered
+          instead of leaving an empty slot */}
       {!error && shownCertificates.length > 0 && (
         <motion.div
           key={effectiveFilter}
@@ -364,7 +364,6 @@ export default function CertificateGrid() {
             <CertificateCard
               key={certificate.id}
               certificate={certificate}
-              domains={certificate._domains}
               tech={certificate._tech}
               showStar={!isFeaturedView}
             />

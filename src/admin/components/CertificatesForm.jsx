@@ -14,8 +14,9 @@ import {
 import { getTechColor } from "../../utils/colors/techColors";
 import { getPlatformColor } from "../../utils/colors/platformColors";
 import {
-  CERTIFICATE_TYPE_FILTER_OPTIONS as CERTIFICATE_TYPES,
-  getCertificateTypeBadgeClasses as getCertificateCategoryBadgeClasses,
+  CERTIFICATE_TYPE_CATEGORIES,
+  getCertificateTypeBadgeClasses,
+  normalizeCertificateType,
 } from "../../utils/colors/typeColors";
 import { MONTH_LABELS } from "../../utils/formatIssueDate";
 import {
@@ -30,15 +31,25 @@ const MONTH_OPTIONS = [
   ...MONTH_LABELS.map((label, i) => ({ value: String(i + 1), label })),
 ];
 
+// Type has no default: you must choose one on purpose.
+const TYPE_OPTIONS = [
+  { value: "", label: "Select type" },
+  ...CERTIFICATE_TYPE_CATEGORIES,
+];
+
+// Domain is only used for filtering, so its chips stay neutral.
+const getDomainColor = () => "border-slate-500/40 text-slate-300";
+
 // ======================================================
 // INITIAL FORM
 // company = Platform (kept as "company" so the public site keeps working)
+// category = Type
 // ======================================================
 
 const initialForm = {
   title: "",
   company: "",
-  category: "technical",
+  category: "",
   domains: [],
   tech: [],
   year: "",
@@ -123,11 +134,11 @@ function SelectDropdown({ value, onChange, options, getBadgeClasses }) {
           text-sm outline-none transition
           ${open ? "border-blue-500 ring-1 ring-blue-500/30" : "border-slate-700 hover:border-slate-600"}`}
       >
-        {getBadgeClasses ? (
+        {getBadgeClasses && selected?.value ? (
           <span
-            className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${getBadgeClasses(selected?.value)}`}
+            className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${getBadgeClasses(selected.value)}`}
           >
-            {selected?.label}
+            {selected.label}
           </span>
         ) : (
           <span className={selected?.value ? "text-white" : "text-gray-500"}>
@@ -163,7 +174,7 @@ function SelectDropdown({ value, onChange, options, getBadgeClasses }) {
                   className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm transition
                     ${isSelected ? "bg-slate-800" : "hover:bg-slate-800/60"}`}
                 >
-                  {getBadgeClasses ? (
+                  {getBadgeClasses && option.value ? (
                     <span
                       className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${getBadgeClasses(option.value)}`}
                     >
@@ -190,7 +201,7 @@ function SelectDropdown({ value, onChange, options, getBadgeClasses }) {
 
 // ======================================================
 // OPTION PICKER (chips + search + add new + delete custom)
-// Used for Platform (single), Domain (max 2), Tech (max 5)
+// Used for Platform (single), Domain (max 2), Tech (max 4)
 // ======================================================
 
 const PREVIEW_COUNT = 8;
@@ -456,10 +467,14 @@ export default function CertificatesForm({
           }
         : splitLegacyTags(editingCertificate.tags);
 
+      // Old types (technical / softskill) are mapped to the closest
+      // current type. Unknown types are left blank so you pick one.
+      const normalizedType = normalizeCertificateType(editingCertificate.category);
+
       setForm({
         title: editingCertificate.title || "",
         company: editingCertificate.company || "",
-        category: editingCertificate.category || "technical",
+        category: normalizedType === "other" ? "" : normalizedType,
         domains,
         tech,
         year: editingCertificate.year || "",
@@ -510,13 +525,16 @@ export default function CertificatesForm({
     }));
   }
 
+  const hasItem = (list, label) =>
+    list.some((item) => item.toLowerCase() === label.toLowerCase());
+
+  // Select if missing, deselect if already selected.
   function toggleInList(field, max) {
     return (label) => {
       setForm((prev) => {
         const current = prev[field];
-        const exists = current.some((item) => item.toLowerCase() === label.toLowerCase());
 
-        if (exists) {
+        if (hasItem(current, label)) {
           return {
             ...prev,
             [field]: current.filter((item) => item.toLowerCase() !== label.toLowerCase()),
@@ -529,8 +547,22 @@ export default function CertificatesForm({
     };
   }
 
+  // Select only. Never deselects (used after "Add new option").
+  function addToList(field, max) {
+    return (label) => {
+      setForm((prev) => {
+        const current = prev[field];
+        if (hasItem(current, label) || current.length >= max) return prev;
+        return { ...prev, [field]: [...current, label] };
+      });
+    };
+  }
+
   const toggleDomain = toggleInList("domains", MAX_DOMAINS);
   const toggleTech = toggleInList("tech", MAX_TECH);
+  const selectDomain = addToList("domains", MAX_DOMAINS);
+  const selectTech = addToList("tech", MAX_TECH);
+  const selectPlatform = (label) => setForm((prev) => ({ ...prev, company: label }));
 
   // Add a new option: reuse it if it already exists (any spelling case),
   // otherwise save it to Firestore. Then select it.
@@ -633,15 +665,12 @@ export default function CertificatesForm({
   function validateForm() {
     if (!form.title.trim()) return "Certificate title is required.";
     if (!form.company.trim()) return "Platform is required.";
+    if (!form.category) return "Select a certificate type.";
     if (form.domains.length === 0) return "Pick at least one domain.";
     if (!form.year.trim()) return "Year is required.";
     if (!/^\d{4}$/.test(form.year.trim())) return "Please enter a valid 4-digit year.";
     if (!editingCertificate && !file) return "Please upload the certificate PDF.";
     if (Number(form.order) < 1) return "Display order must be at least 1.";
-
-    if (form.featured && form.category === "other") {
-      return "A featured certificate can't be type 'Other'. Pick a specific type.";
-    }
 
     return "";
   }
@@ -671,7 +700,7 @@ export default function CertificatesForm({
       const certificateData = {
         title: form.title.trim(),
         company: form.company.trim(), // Platform
-        category: form.category || "other", // Type
+        category: form.category, // Type
         domains: form.domains,
         tech: form.tech,
         // "tags" is kept (domains + tech) so the public site and AI chatbot keep working
@@ -798,7 +827,7 @@ export default function CertificatesForm({
         disabled={loading}
         getColor={getPlatformColor}
         onToggle={togglePlatform}
-        onAdd={(label) => handleAddOption("platform", label, (v) => setForm((p) => ({ ...p, company: v })))}
+        onAdd={(label) => handleAddOption("platform", label, selectPlatform)}
         onDelete={(label) => handleDeleteOption("platform", label)}
         labelClasses={labelClasses}
         inputClasses={inputClasses}
@@ -810,8 +839,8 @@ export default function CertificatesForm({
         <SelectDropdown
           value={form.category}
           onChange={handleCategoryChange}
-          options={CERTIFICATE_TYPES}
-          getBadgeClasses={getCertificateCategoryBadgeClasses}
+          options={TYPE_OPTIONS}
+          getBadgeClasses={getCertificateTypeBadgeClasses}
         />
       </div>
 
@@ -819,14 +848,14 @@ export default function CertificatesForm({
       <OptionPicker
         label="Domain"
         placeholder="Search or add a domain..."
-        hint="The topic of the certificate. This becomes the main filter on your portfolio."
+        hint="The topic of the certificate. Used for filtering, not shown on the card."
         options={optionsByKind.domain}
         selected={form.domains}
         max={MAX_DOMAINS}
         disabled={loading}
-        getColor={getTechColor}
+        getColor={getDomainColor}
         onToggle={toggleDomain}
-        onAdd={(label) => handleAddOption("domain", label, toggleDomain)}
+        onAdd={(label) => handleAddOption("domain", label, selectDomain)}
         onDelete={(label) => handleDeleteOption("domain", label)}
         labelClasses={labelClasses}
         inputClasses={inputClasses}
@@ -836,14 +865,14 @@ export default function CertificatesForm({
       <OptionPicker
         label="Tech / Tools"
         placeholder="Search or add a tool..."
-        hint="Languages, tools and libraries used, like Python, SQL or Power BI."
+        hint="Languages, tools and libraries used, like Python, SQL or Power BI. Shown as pills on the card."
         options={optionsByKind.tech}
         selected={form.tech}
         max={MAX_TECH}
         disabled={loading}
         getColor={getTechColor}
         onToggle={toggleTech}
-        onAdd={(label) => handleAddOption("tech", label, toggleTech)}
+        onAdd={(label) => handleAddOption("tech", label, selectTech)}
         onDelete={(label) => handleDeleteOption("tech", label)}
         labelClasses={labelClasses}
         inputClasses={inputClasses}
@@ -912,7 +941,7 @@ export default function CertificatesForm({
         <span>
           <span className="block text-sm font-medium text-white">Featured certificate</span>
           <span className="block text-[11px] text-gray-500">
-            Only featured certificates show by default on your portfolio (6 is ideal).
+            Featured certificates are shown by default on your portfolio.
           </span>
         </span>
       </button>

@@ -1,5 +1,3 @@
-// Put this file at: src/utils/formatIssueDate.js
-
 export const MONTH_LABELS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
