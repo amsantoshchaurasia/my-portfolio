@@ -41,15 +41,17 @@ export default function Experience() {
 
   // ========================================
   // UI
-  // Size 3 (768x1024): md:min-h-screen makes this section at least
-  // one full screen tall, so the next section (Education) does not
-  // show below the card. lg:min-h-0 keeps size 4, 5 and 6 unchanged.
+  // md:min-h-screen makes this section at least one full screen
+  // tall on tablets, so the next section (Education) does not show
+  // below the card. lg:min-h-0 keeps 1024px unchanged.
+  // xl:min-h-screen does the same for 1280px and wider screens
+  // (content stays top-aligned, no vertical centering).
   // ========================================
 
   return (
     <section
       id="experience"
-      className="bg-[#0B1120] text-white scroll-mt-16 sm:scroll-mt-13 md:scroll-mt-22 lg:scroll-mt-14 xl:scroll-mt-15 pt-6 sm:pt-12 md:pt-6 lg:pt-8 xl:pt-10 pb-10 sm:pb-20 lg:pb-24 md:min-h-screen lg:min-h-0"
+      className="bg-[#0B1120] text-white scroll-mt-16 sm:scroll-mt-12 md:scroll-mt-22 lg:scroll-mt-14 xl:scroll-mt-17 pt-6 sm:pt-12 md:pt-6 lg:pt-8 xl:pt-10 pb-10 sm:pb-20 lg:pb-24 sm:min-h-screen md:min-h-screen lg:min-h-0 xl:min-h-screen"
     >
       <Container>
         <SectionAnimation>
@@ -79,7 +81,7 @@ export default function Experience() {
               TIMELINE
           ======================================== */}
 
-          <div className="relative mx-auto mt-6 sm:mt-6 md:mt-8 lg:mt-8 max-w-4xl">
+          <div className="relative mx-auto mt-6 sm:mt-6 md:mt-8 lg:mt-8 max-w-4xl min-[1800px]:!max-w-6xl">
 
             {/* LOADING */}
 

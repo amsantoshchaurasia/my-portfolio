@@ -152,12 +152,15 @@ export default function Education() {
 
   // ======================================================
   // UI
+  // min-[1800px]:!max-w-6xl makes the timeline cards wider only on
+  // very large screens (1920x1080). Sizes 1-6 (up to 1536px) keep
+  // their existing widths.
   // ======================================================
 
   return (
     <section
       id="education"
-      className="bg-[#0B1120] text-white scroll-mt-16 sm:scroll-mt-13 md:scroll-mt-22 lg:scroll-mt-14 xl:scroll-mt-15 pt-6 sm:pt-12 md:pt-6 lg:pt-8 xl:pt-10 pb-10 sm:pb-20 lg:pb-24"
+      className="bg-[#0B1120] text-white scroll-mt-16 sm:scroll-mt-12 md:scroll-mt-22 lg:scroll-mt-14 xl:scroll-mt-14 pt-6 sm:pt-12 md:pt-6 lg:pt-8 xl:pt-10 pb-10 sm:pb-20 lg:pb-24"
     >
       <Container>
 
@@ -209,7 +212,7 @@ export default function Education() {
               ================================================== */}
 
               {higherEducation.length > 0 && (
-                <div className="max-w-3xl lg:max-w-[52rem] xl:max-w-4xl 2xl:max-w-5xl mx-auto mt-6 sm:mt-6 md:mt-8 lg:mt-8">
+                <div className="max-w-3xl lg:max-w-[52rem] xl:max-w-4xl 2xl:max-w-5xl min-[1800px]:!max-w-6xl mx-auto mt-6 sm:mt-6 md:mt-8 lg:mt-8">
 
                   {higherEducation.map(
                     (item, index) => (
@@ -231,7 +234,7 @@ export default function Education() {
               ================================================== */}
 
               {schoolEducation.length > 0 && (
-                <div className="max-w-3xl lg:max-w-[52rem] xl:max-w-4xl 2xl:max-w-5xl mx-auto mt-6 sm:mt-10 md:mt-8 lg:mt-10">
+                <div className="max-w-3xl lg:max-w-[52rem] xl:max-w-4xl 2xl:max-w-5xl min-[1800px]:!max-w-6xl mx-auto mt-6 sm:mt-10 md:mt-8 lg:mt-10">
 
                   <h3 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center mb-5 sm:mb-10 md:mb-12">
                     School Education

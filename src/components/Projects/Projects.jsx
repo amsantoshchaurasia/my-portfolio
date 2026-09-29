@@ -142,12 +142,14 @@ export default function Projects() {
 
   // ========================================
   // UI
+  // md:scroll-mt-22 added so the blue label is not hidden behind the
+  // navbar at 768px (same value Experience / Certificates / Contact use).
   // ========================================
 
   return (
     <section
       id="projects"
-      className="bg-[#0B1120] text-white scroll-mt-14 sm:scroll-mt-22 lg:scroll-mt-13 xl:scroll-mt-17 pt-8 sm:pt-6 md:pt-6 lg:pt-8 xl:pt-10 pb-16 sm:pb-20 lg:pb-24"
+      className="bg-[#0B1120] text-white scroll-mt-14 sm:scroll-mt-18 md:scroll-mt-22 lg:scroll-mt-13 xl:scroll-mt-14 pt-8 sm:pt-6 md:pt-6 lg:pt-8 xl:pt-10 pb-16 sm:pb-20 lg:pb-24"
     >
       <Container>
         <SectionAnimation>
@@ -159,7 +161,7 @@ export default function Projects() {
           <div className="mx-auto max-w-xl sm:max-w-2xl md:max-w-3xl lg:max-w-4xl text-center">
 
             <p className="text-xs sm:text-sm font-semibold uppercase tracking-[4px] sm:tracking-[8px] text-blue-400">
-              My Projects
+              My Work
             </p>
 
             <h2 className="mt-3 sm:mt-4 text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black">

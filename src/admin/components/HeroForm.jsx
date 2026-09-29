@@ -517,11 +517,10 @@ export default function HeroForm() {
 
       </div>
 
-      {/* All four social fields in ONE grid so that at 2xl they can
-          form a single clean row of 4 instead of two half-empty-looking
-          rows of 2 — sizes 1-5 are untouched (still md:grid-cols-2) */}
+      {/* All four social fields in ONE grid: 1 column on mobile, 2 columns
+          from md upward (including 2xl, so the URLs stay in 2 columns) */}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6 lg:gap-7 xl:gap-8 2xl:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6 lg:gap-7 xl:gap-8 2xl:gap-8">
 
         {/* GITHUB */}
 
@@ -695,7 +694,7 @@ export default function HeroForm() {
 
         </div>
       ) : (
-        <div className="pt-5 border-t border-slate-700 flex justify-start sm:pt-6 md:justify-center lg:justify-start xl:pt-7 2xl:pt-8">
+        <div className="pt-5 border-t border-slate-700 flex justify-start sm:justify-center sm:pt-6 md:justify-center lg:justify-start xl:pt-7 2xl:pt-8">
 
           <button
             type="button"

@@ -81,6 +81,11 @@ export default function CertificateCard({
   //  (Python) (SQL) (Power BI) (Excel)        <- every tool, never hidden
   //  ────────────────────────────────────
   //  (Forage)               View Certificate ↗
+  //
+  //  Header rule: when the label + category badge + date fit on one
+  //  line (most cards) nothing changes. When a long category badge
+  //  (e.g. "Professional Certification") does not fit, the header wraps
+  //  onto a second line instead of overlapping the date.
   // ======================================================
 
   return (
@@ -112,8 +117,8 @@ export default function CertificateCard({
       <div className="flex flex-col h-full">
         {/* Header */}
 
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 sm:gap-x-2.5">
             {showStar && certificate?.featured && (
               <FiStar
                 size={13}
@@ -122,8 +127,8 @@ export default function CertificateCard({
               />
             )}
 
-            {/* Hidden on phones: the section title already says "Certificates" */}
-            <span className="hidden sm:inline uppercase tracking-[4px] text-xs text-gray-500">
+            {/* Hidden below 768px and at 1024-1535px (narrow 3-column cards); shown at 768-1023px and 1536px+ */}
+            <span className="hidden md:max-lg:inline 2xl:inline uppercase tracking-[4px] text-xs text-gray-500">
               Certificate
             </span>
 
@@ -137,7 +142,7 @@ export default function CertificateCard({
           </div>
 
           {issueDate && (
-            <span className="shrink-0 bg-blue-600/20 text-blue-400 text-xs sm:text-sm px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full">
+            <span className="ml-auto shrink-0 bg-blue-600/20 text-blue-400 text-xs md:max-lg:text-sm xl:text-sm px-2.5 md:max-lg:px-3 xl:px-3 py-0.5 sm:py-1 rounded-full">
               {issueDate}
             </span>
           )}

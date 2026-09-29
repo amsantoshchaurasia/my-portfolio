@@ -29,8 +29,16 @@ import {
 // is arbitrarily "highlighted", since all 8 shortcuts are equally
 // important admin tasks. This keeps the dashboard looking balanced
 // and professional instead of drawing the eye to one random action.
+//
+// 640px (sm) and 768px (md): py-2.5 (lg:py-3 restores the old value from 1024px up).
 const actionBtn =
-  "flex items-center justify-center space-x-2 rounded-xl border border-slate-700/80 bg-slate-800/60 px-2 py-2.5 text-[11px] font-medium text-slate-200 transition-all hover:border-blue-500/40 hover:bg-slate-700 sm:px-4 sm:py-3 sm:text-sm 2xl:py-4";
+  "flex items-center justify-center space-x-2 rounded-xl border border-slate-700/80 bg-slate-800/60 px-2 py-2.5 text-[11px] font-medium text-slate-200 transition-all hover:border-blue-500/40 hover:bg-slate-700 sm:px-4 sm:py-2.5 sm:text-sm lg:py-3 2xl:py-4";
+
+// Icon classes for the quick action buttons.
+// 640px (sm) and 768px (md): bigger icon (text-lg) with a soft rounded background box.
+// lg: resets everything back to the previous look (text-sm, no box).
+const actionIcon =
+  "text-blue-400 sm:rounded-md sm:bg-blue-500/10 sm:p-1.5 sm:text-lg lg:rounded-none lg:bg-transparent lg:p-0 lg:text-sm";
 
 
 export default function Dashboard() {
@@ -263,10 +271,10 @@ export default function Dashboard() {
 
       {/* ==================================================
           QUICK MANAGEMENT ACTIONS
-          — 8 shortcuts, 2 per row on mobile (4 rows), 4 per
-          row from sm upward (2 rows). All buttons share the
-          same style — uniform visual weight, no single action
-          arbitrarily highlighted.
+          — 8 shortcuts, 2 per row on mobile (4 rows) and at
+          640px (4 rows), 4 per row from lg upward (2 rows).
+          All buttons share the same style — uniform visual
+          weight, no single action arbitrarily highlighted.
       ================================================== */}
 
       <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900/60 p-3 sm:mt-8 sm:rounded-2xl sm:p-6 2xl:p-8">
@@ -291,9 +299,9 @@ export default function Dashboard() {
         </p>
 
 
-        {/* ACTION BUTTONS — uniform-size, uniform-style grid from sm upward */}
+        {/* ACTION BUTTONS — 2 cols up to lg, 4 cols from lg upward */}
 
-        <div className="mt-3 grid grid-cols-2 gap-1.5 sm:mt-5 sm:grid-cols-4 sm:gap-3 xl:gap-4">
+        <div className="mt-3 grid grid-cols-2 gap-1.5 sm:mt-5 sm:gap-3 lg:grid-cols-4 xl:gap-4">
 
           {/* HERO */}
 
@@ -304,7 +312,7 @@ export default function Dashboard() {
             className={actionBtn}
           >
 
-            <HiRefresh className="text-blue-400" />
+            <HiRefresh className={actionIcon} />
 
             <span>
               Update Hero
@@ -322,7 +330,7 @@ export default function Dashboard() {
             className={actionBtn}
           >
 
-            <HiUser className="text-blue-400" />
+            <HiUser className={actionIcon} />
 
             <span>
               Update About
@@ -340,7 +348,7 @@ export default function Dashboard() {
             className={actionBtn}
           >
 
-            <HiBriefcase className="text-blue-400" />
+            <HiBriefcase className={actionIcon} />
 
             <span>
               Add New Project
@@ -358,7 +366,7 @@ export default function Dashboard() {
             className={actionBtn}
           >
 
-            <HiBadgeCheck className="text-blue-400" />
+            <HiBadgeCheck className={actionIcon} />
 
             <span>
               Add Certificate
@@ -376,7 +384,7 @@ export default function Dashboard() {
             className={actionBtn}
           >
 
-            <HiCollection className="text-blue-400" />
+            <HiCollection className={actionIcon} />
 
             <span>
               Add Experience
@@ -394,7 +402,7 @@ export default function Dashboard() {
             className={actionBtn}
           >
 
-            <HiAcademicCap className="text-blue-400" />
+            <HiAcademicCap className={actionIcon} />
 
             <span>
               Add Education
@@ -412,7 +420,7 @@ export default function Dashboard() {
             className={actionBtn}
           >
 
-            <HiCode className="text-blue-400" />
+            <HiCode className={actionIcon} />
 
             <span>
               Manage Skills
@@ -430,7 +438,7 @@ export default function Dashboard() {
             className={actionBtn}
           >
 
-            <HiDocumentDownload className="text-blue-400" />
+            <HiDocumentDownload className={actionIcon} />
 
             <span>
               Manage Resume

@@ -15,6 +15,7 @@ import {
 } from "react-icons/hi";
 
 // Shared input styling: responsive sizing + left icon space + autofill fix
+// 2xl (1536px and up): larger, more professional sizing
 const inputClass = `
   w-full
   rounded-xl
@@ -23,12 +24,14 @@ const inputClass = `
   bg-[#111827]/80
   pl-10
   sm:pl-12
+  2xl:pl-14
   pr-4
   py-3
   sm:py-3.5
   md:py-4
   text-sm
   sm:text-base
+  2xl:text-lg
   text-white
   placeholder:text-gray-500
   outline-none
@@ -45,13 +48,34 @@ const iconClass = `
   pointer-events-none
   absolute
   left-4
+  2xl:left-5
   top-1/2
   -translate-y-1/2
   text-base
   sm:text-xl
+  2xl:text-2xl
   text-gray-500
   transition
   group-focus-within:text-blue-400
+`;
+
+// Shared style for the show/hide eye buttons (email + password)
+const eyeBtnClass = `
+  absolute
+  right-2.5
+  sm:right-3.5
+  2xl:right-4
+  top-1/2
+  -translate-y-1/2
+  p-2
+  text-lg
+  sm:text-2xl
+  2xl:text-[26px]
+  text-gray-400
+  hover:text-blue-400
+  transition
+  disabled:opacity-50
+  rounded-lg
 `;
 
 export default function Login() {
@@ -64,6 +88,9 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  // Both fields are hidden by default. The eye button lets the admin
+  // reveal them to check for typing mistakes.
+  const [showEmail, setShowEmail] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -242,33 +269,33 @@ export default function Login() {
 
       {/* BACKGROUND GLOW */}
 
-      <div className="absolute -top-24 -left-24 w-[260px] h-[260px] sm:-top-40 sm:-left-40 sm:w-[450px] sm:h-[450px] rounded-full bg-blue-600/20 blur-[90px] sm:blur-[120px]" />
+      <div className="absolute -top-24 -left-24 w-[260px] h-[260px] sm:-top-40 sm:-left-40 sm:w-[450px] sm:h-[450px] 2xl:-top-56 2xl:-left-56 2xl:w-[700px] 2xl:h-[700px] rounded-full bg-blue-600/20 blur-[90px] sm:blur-[120px] 2xl:blur-[160px]" />
 
-      <div className="absolute bottom-0 right-0 w-[260px] h-[260px] sm:w-[450px] sm:h-[450px] rounded-full bg-cyan-500/20 blur-[90px] sm:blur-[120px]" />
+      <div className="absolute bottom-0 right-0 w-[260px] h-[260px] sm:w-[450px] sm:h-[450px] 2xl:w-[700px] 2xl:h-[700px] rounded-full bg-cyan-500/20 blur-[90px] sm:blur-[120px] 2xl:blur-[160px]" />
 
 
       {/* LOGIN CARD */}
 
-      <div className="relative z-10 w-full max-w-[400px] sm:max-w-md rounded-2xl sm:rounded-3xl border border-slate-700/50 bg-slate-900/70 backdrop-blur-xl p-5 sm:p-8 md:p-10 shadow-[0_0_60px_rgba(37,99,235,.15)]">
+      <div className="relative z-10 w-full max-w-[400px] sm:max-w-md 2xl:max-w-[540px] rounded-2xl sm:rounded-3xl border border-slate-700/50 bg-slate-900/70 backdrop-blur-xl p-5 sm:p-8 md:p-10 2xl:p-12 shadow-[0_0_60px_rgba(37,99,235,.15)]">
 
         {/* TOP ACCENT LINE */}
 
-        <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/70 to-transparent" />
+        <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/70 to-transparent 2xl:inset-x-12" />
 
 
         {/* HEADER */}
 
         <div className="text-center">
 
-          <div className="mx-auto mb-3 sm:mb-5 flex h-10 w-10 sm:h-14 sm:w-14 items-center justify-center rounded-xl sm:rounded-2xl border border-blue-500/20 bg-blue-500/10 text-xl sm:text-3xl text-blue-400">
+          <div className="mx-auto mb-3 sm:mb-5 2xl:mb-6 flex h-10 w-10 sm:h-14 sm:w-14 2xl:h-16 2xl:w-16 items-center justify-center rounded-xl sm:rounded-2xl border border-blue-500/20 bg-blue-500/10 text-xl sm:text-3xl 2xl:text-4xl text-blue-400">
             <HiShieldCheck />
           </div>
 
-          <h1 className="text-xl sm:text-3xl md:text-4xl font-black text-white">
+          <h1 className="text-xl sm:text-3xl md:text-4xl 2xl:text-5xl font-black text-white">
             Admin Login
           </h1>
 
-          <p className="mt-1 sm:mt-3 text-xs sm:text-base text-gray-400">
+          <p className="mt-1 sm:mt-3 2xl:mt-4 text-xs sm:text-base 2xl:text-lg text-gray-400">
             Portfolio Management System
           </p>
 
@@ -279,15 +306,15 @@ export default function Login() {
 
         <form
           onSubmit={handleLogin}
-          className="mt-5 sm:mt-8 md:mt-9 space-y-3.5 sm:space-y-5"
+          className="mt-5 sm:mt-8 md:mt-9 2xl:mt-11 space-y-3.5 sm:space-y-5 2xl:space-y-6"
         >
 
 
-          {/* EMAIL */}
+          {/* EMAIL — hidden by default, eye button reveals it */}
 
           <div>
 
-            <label className="block mb-1.5 sm:mb-2 text-xs sm:text-sm font-medium text-gray-300">
+            <label className="block mb-1.5 sm:mb-2 2xl:mb-2.5 text-xs sm:text-sm 2xl:text-base font-medium text-gray-300">
               Email
             </label>
 
@@ -304,9 +331,42 @@ export default function Login() {
                   setError("");
                 }}
                 autoComplete="email"
+                autoCapitalize="none"
+                spellCheck={false}
                 disabled={loading}
-                className={inputClass}
+                className={`${inputClass} !pr-12 sm:!pr-14 2xl:!pr-16 ${
+                  showEmail
+                    ? ""
+                    : "[-webkit-text-security:disc]"
+                }`}
               />
+
+
+              {/* SHOW / HIDE EMAIL */}
+
+              <button
+                type="button"
+                onClick={() =>
+                  setShowEmail(
+                    (prev) => !prev
+                  )
+                }
+                disabled={loading}
+                aria-label={
+                  showEmail
+                    ? "Hide email"
+                    : "Show email"
+                }
+                className={eyeBtnClass}
+              >
+
+                {showEmail ? (
+                  <HiEyeOff />
+                ) : (
+                  <HiEye />
+                )}
+
+              </button>
 
             </div>
 
@@ -317,7 +377,7 @@ export default function Login() {
 
           <div>
 
-            <label className="block mb-1.5 sm:mb-2 text-xs sm:text-sm font-medium text-gray-300">
+            <label className="block mb-1.5 sm:mb-2 2xl:mb-2.5 text-xs sm:text-sm 2xl:text-base font-medium text-gray-300">
               Password
             </label>
 
@@ -340,7 +400,7 @@ export default function Login() {
                 }}
                 autoComplete="current-password"
                 disabled={loading}
-                className={`${inputClass} !pr-12 sm:!pr-14`}
+                className={`${inputClass} !pr-12 sm:!pr-14 2xl:!pr-16`}
               />
 
 
@@ -359,21 +419,7 @@ export default function Login() {
                     ? "Hide password"
                     : "Show password"
                 }
-                className="
-                  absolute
-                  right-2.5
-                  sm:right-3.5
-                  top-1/2
-                  -translate-y-1/2
-                  p-2
-                  text-lg
-                  sm:text-2xl
-                  text-gray-400
-                  hover:text-blue-400
-                  transition
-                  disabled:opacity-50
-                  rounded-lg
-                "
+                className={eyeBtnClass}
               >
 
                 {showPassword ? (
@@ -395,12 +441,12 @@ export default function Login() {
 
             <div
               role="alert"
-              className="flex items-start gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 sm:px-4 sm:py-3"
+              className="flex items-start gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 sm:px-4 sm:py-3 2xl:px-5 2xl:py-3.5"
             >
 
-              <HiExclamationCircle className="mt-0.5 shrink-0 text-base sm:text-lg text-red-400" />
+              <HiExclamationCircle className="mt-0.5 shrink-0 text-base sm:text-lg 2xl:text-xl text-red-400" />
 
-              <p className="text-xs sm:text-sm text-red-400">
+              <p className="text-xs sm:text-sm 2xl:text-base text-red-400">
                 {error}
               </p>
 
@@ -427,8 +473,10 @@ export default function Login() {
               py-3
               sm:py-3.5
               md:py-4
+              2xl:py-[18px]
               text-sm
               sm:text-base
+              2xl:text-lg
               rounded-xl
               bg-gradient-to-r
               from-blue-600
@@ -462,7 +510,7 @@ export default function Login() {
 
         {/* FOOTER NOTE */}
 
-        <p className="mt-4 sm:mt-6 flex items-center justify-center gap-1.5 text-[11px] sm:text-xs text-gray-500">
+        <p className="mt-4 sm:mt-6 2xl:mt-8 flex items-center justify-center gap-1.5 text-[11px] sm:text-xs 2xl:text-sm text-gray-500">
           <HiLockClosed />
           Secure admin access only
         </p>

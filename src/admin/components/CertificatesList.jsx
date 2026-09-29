@@ -369,7 +369,7 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
           </p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-1 lg:grid-cols-2">
           {filteredCertificates.map((certificate) => {
             const isDeleting = deletingId === certificate.id;
             const { domains, tech } = getDomainsAndTech(certificate);
@@ -379,14 +379,14 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
             return (
               <div
                 key={certificate.id}
-                className="relative flex flex-col overflow-hidden rounded-lg border border-slate-800 bg-[#111827] py-3.5 pl-4 pr-3.5 transition hover:border-slate-700"
+                className="relative flex flex-col overflow-hidden rounded-lg border border-slate-800 bg-[#111827] py-3.5 pl-4 pr-3.5 transition hover:border-slate-700 sm:grid sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-x-3"
               >
                 <span
                   className={`absolute inset-y-0 left-0 w-[3px] rounded-l-lg ${typeColors.accent}`}
                 />
 
                 {/* LINE 1: NAME (left) + DATE (right corner) */}
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start justify-between gap-3 sm:col-start-1 sm:row-start-1">
                   <p className="min-w-0 flex-1 truncate text-sm font-semibold text-white">
                     {certificate.title}
                   </p>
@@ -399,11 +399,12 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
                 </div>
 
                 {/* LINE 2: PLATFORM, TYPE, DOMAIN (left) + STAR / EDIT / DELETE (right) */}
-                <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 max-[400px]:contents sm:contents">
+                  {/* Labels: mobile pe row 2 */}
+                  <div className="flex min-w-0 flex-wrap items-center gap-1.5 max-[400px]:order-2 max-[400px]:mt-1.5 sm:col-span-2 sm:row-start-2 sm:mt-1.5">
                     {certificate.company && (
                       <span
-                        className={`shrink-0 truncate rounded-full border bg-white/5 px-2 py-0.5 text-[11px] font-semibold ${getPlatformColor(
+                        className={`shrink-0 truncate rounded-full border bg-white/5 px-2 py-0.5 text-[11px] font-semibold max-[400px]:hidden lg:order-last ${getPlatformColor(
                           certificate.company
                         )}`}
                       >
@@ -420,14 +421,26 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
                     {domains.map((domain) => (
                       <span
                         key={`d-${domain}`}
-                        className={`shrink-0 rounded-full border bg-white/5 px-2 py-0.5 text-[11px] font-semibold ${getTechColor(domain)}`}
+                        className={`shrink-0 rounded-full border bg-white/5 px-2 py-0.5 text-[11px] font-semibold max-[400px]:max-w-full max-[400px]:truncate sm:max-w-full sm:truncate ${getTechColor(domain)}`}
                       >
                         {domain}
                       </span>
                     ))}
                   </div>
 
-                  <div className="flex shrink-0 gap-1.5">
+                  {/* Mobile bottom row: platform (left) + buttons (right). Desktop pe wrapper invisible (contents) */}
+                  <div className="contents max-[400px]:order-4 max-[400px]:mt-2 max-[400px]:flex max-[400px]:items-center max-[400px]:justify-between max-[400px]:gap-2">
+                    {certificate.company && (
+                      <span
+                        className={`hidden min-w-0 truncate rounded-full border bg-white/5 px-2 py-0.5 text-[11px] font-semibold max-[400px]:inline-block ${getPlatformColor(
+                          certificate.company
+                        )}`}
+                      >
+                        {certificate.company}
+                      </span>
+                    )}
+
+                  <div className="flex shrink-0 gap-1.5 max-[400px]:ml-auto sm:col-start-2 sm:row-start-1 sm:justify-self-end">
                     <button
                       type="button"
                       onClick={() => handleToggleFeatured(certificate)}
@@ -497,15 +510,16 @@ export default function CertificatesList({ refresh, onEditCertificate }) {
                       )}
                     </button>
                   </div>
+                  </div>
                 </div>
 
-                {/* LINE 3: TECH / SKILLS */}
+                {/* LINE 3: TECH / SKILLS (saari skills dikhengi) */}
                 {tech.length > 0 && (
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5 max-[400px]:order-3 sm:col-span-2 sm:row-start-3">
                     {tech.map((item) => (
                       <span
                         key={`t-${item}`}
-                        className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${getTechColor(item)}`}
+                        className={`rounded-full border px-2 py-0.5 text-[11px] font-medium max-[400px]:max-w-full max-[400px]:truncate sm:max-w-full sm:truncate ${getTechColor(item)}`}
                       >
                         {item}
                       </span>
