@@ -1,17 +1,54 @@
+import { useEffect, useRef } from "react";
 import Button from "../common/Button";
 import TechBadge from "./TechBadge";
 import { getCategoryLabel, getCategoryBadgeClasses } from "./projectTypeUtils";
 
 export default function ProjectModal({ project, onClose }) {
+  // Latest onClose always available without re-running the effect
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // Esc se band + background page scroll lock (only while modal is open)
+  useEffect(() => {
+    if (!project) return;
+
+    function handleEscape(e) {
+      if (e.key === "Escape") onCloseRef.current?.();
+    }
+
+    document.addEventListener("keydown", handleEscape);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [project]);
+
   if (!project) return null;
+
+  // Safe even if a project was saved without technologies
+  const technologies = Array.isArray(project.technologies)
+    ? project.technologies
+    : [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 sm:p-6 overflow-y-auto">
-      <div className="relative w-full max-w-3xl rounded-2xl sm:rounded-3xl border border-slate-700 bg-[#111827] p-5 sm:p-8 md:p-10 my-6 sm:my-8 shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${project.title || "Project"} details`}
+        className="relative w-full max-w-3xl rounded-2xl sm:rounded-3xl border border-slate-700 bg-[#111827] p-5 sm:p-8 md:p-10 my-6 sm:my-8 shadow-2xl"
+      >
         
         {/* Close Button */}
         <button
+          type="button"
           onClick={onClose}
+          aria-label="Close"
           className="absolute top-4 right-4 sm:top-5 sm:right-6 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-800 flex items-center justify-center text-xl sm:text-2xl text-gray-400 hover:text-white hover:bg-slate-700 transition"
         >
           &times;
@@ -60,20 +97,22 @@ export default function ProjectModal({ project, onClose }) {
           </div>
         )}
 
-        {/* Tech Stack */}
-        <div className="mt-6 sm:mt-8">
-          <h3 className="text-lg sm:text-xl font-bold text-white mb-2.5 sm:mb-3">
-            Tech Stack Used
-          </h3>
-          <div className="flex flex-wrap gap-2 sm:gap-3">
-            {project.technologies.map((tech) => (
-              <TechBadge
-                key={tech}
-                name={tech}
-              />
-            ))}
+        {/* Tech Stack — only shown when the project has technologies */}
+        {technologies.length > 0 && (
+          <div className="mt-6 sm:mt-8">
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-2.5 sm:mb-3">
+              Tech Stack Used
+            </h3>
+            <div className="flex flex-wrap gap-2 sm:gap-3">
+              {technologies.map((tech) => (
+                <TechBadge
+                  key={tech}
+                  name={tech}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Action Buttons */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-8 sm:mt-10">

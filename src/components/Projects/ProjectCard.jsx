@@ -1,11 +1,39 @@
+import { useState } from "react";
 import Button from "../common/Button";
-import TechBadge from "./TechBadge";
+import { getTechColor } from "../../utils/colors/techColors";
+import TechPopup from "./TechPopup";
 import { getCategoryLabel, getCategoryBadgeClasses } from "./projectTypeUtils";
+
+const MAX_VISIBLE_TAGS = 5; // most that is ever shown (size 2 only)
+
+// Same tag size as CertificateCard so both sections look consistent
+const pillClasses =
+  "rounded-full border bg-slate-800/60 px-2.5 py-1 sm:px-3 text-xs font-medium";
 
 export default function ProjectCard({
   project,
   onView,
 }) {
+  const [showAllTech, setShowAllTech] = useState(false);
+
+  const technologies = project.technologies || [];
+  const visibleTech = technologies.slice(0, MAX_VISIBLE_TAGS);
+
+  // Tags per size:
+  //  size 1 (375)        : 3 + "+N"
+  //  size 2 (640)        : 5 + "+N"
+  //  size 3 (768)        : 3 + "+N"
+  //  size 4 (1024)       : 2 + "+N"
+  //  size 5 (1280)       : 3 + "+N"
+  //  size 6, 7 (1536+)   : 4 + "+N"
+  const extra2 = technologies.length - 2;
+  const extra3 = technologies.length - 3;
+  const extra4 = technologies.length - 4;
+  const extra5 = technologies.length - 5;
+
+  const chipClasses =
+    "rounded-full border border-blue-500/40 bg-blue-500/10 px-2.5 py-1 sm:px-3 text-xs font-medium text-blue-400 transition hover:bg-blue-500/20 hover:border-blue-500";
+
   return (
     <div
       className="
@@ -40,12 +68,12 @@ export default function ProjectCard({
         <div className="flex items-center justify-between gap-2">
 
           <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
-            <span className="uppercase tracking-[2px] sm:tracking-[4px] text-[10px] sm:text-xs text-gray-500">
+            <span className="md:hidden xl:inline uppercase tracking-[2px] sm:tracking-[4px] text-[10px] sm:text-xs text-gray-500">
               Project
             </span>
 
             <span
-              className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-medium ${getCategoryBadgeClasses(
+              className={`min-w-0 truncate rounded-full border px-2 py-0.5 text-[10px] sm:text-xs font-medium ${getCategoryBadgeClasses(
                 project.category
               )}`}
             >
@@ -73,9 +101,10 @@ export default function ProjectCard({
             sm:text-xl
             md:text-2xl
             lg:text-xl
-            xl:text-2xl
+            xl:text-xl
             font-bold
             leading-tight
+            line-clamp-2
           "
         >
           {project.title}
@@ -108,17 +137,91 @@ export default function ProjectCard({
 
 
         {/* ========================================
-            TECHNOLOGIES
+            TECHNOLOGIES (tags + "+N", count changes per size)
         ======================================== */}
 
-        <div className="flex flex-wrap gap-2 sm:gap-2.5 mt-4 sm:mt-5">
+        <div className="flex flex-wrap gap-2 sm:gap-2.5 md:gap-1.5 xl:gap-2.5 mt-4 sm:mt-5">
 
-          {project.technologies?.map((tech) => (
-            <TechBadge
-              key={tech}
-              name={tech}
-            />
-          ))}
+          {visibleTech.map((tech, index) => {
+            const pill = (
+              <span
+                title={tech}
+                className={`${pillClasses} max-w-[160px] truncate ${getTechColor(tech)}`}
+              >
+                {tech}
+              </span>
+            );
+
+            // visibility of each tag per size
+            let visibility = "contents"; // tag 1, 2: hamesha
+
+            // 3rd tag: size 4 par hide
+            if (index === 2) visibility = "contents lg:hidden xl:contents";
+
+            // 4th tag: size 2 aur size 6, 7 par
+            if (index === 3) visibility = "hidden sm:contents md:hidden 2xl:contents";
+
+            // 5th tag: sirf size 2 par
+            if (index === 4) visibility = "hidden sm:contents md:hidden";
+
+            return (
+              <span key={tech} className={visibility}>
+                {pill}
+              </span>
+            );
+          })}
+
+          {/* "+N" - size 1, 3, 5 (3 tags dikhte hain) */}
+          {extra3 > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowAllTech(true)}
+              aria-label={`Show ${extra3} more technologies`}
+              title={`${extra3} more technologies`}
+              className={`sm:hidden md:inline-block lg:hidden xl:inline-block 2xl:hidden ${chipClasses}`}
+            >
+              +{extra3}
+            </button>
+          )}
+
+          {/* "+N" - size 2 (5 tags dikhte hain) */}
+          {extra5 > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowAllTech(true)}
+              aria-label={`Show ${extra5} more technologies`}
+              title={`${extra5} more technologies`}
+              className={`hidden sm:inline-block md:hidden ${chipClasses}`}
+            >
+              +{extra5}
+            </button>
+          )}
+
+          {/* "+N" - size 4 (2 tags dikhte hain) */}
+          {extra2 > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowAllTech(true)}
+              aria-label={`Show ${extra2} more technologies`}
+              title={`${extra2} more technologies`}
+              className={`hidden lg:inline-block xl:hidden ${chipClasses} lg:!px-2`}
+            >
+              +{extra2}
+            </button>
+          )}
+
+          {/* "+N" - size 6, 7 (4 tags dikhte hain) */}
+          {extra4 > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowAllTech(true)}
+              aria-label={`Show ${extra4} more technologies`}
+              title={`${extra4} more technologies`}
+              className={`hidden 2xl:inline-block ${chipClasses}`}
+            >
+              +{extra4}
+            </button>
+          )}
 
         </div>
 
@@ -133,8 +236,12 @@ export default function ProjectCard({
             grid-cols-2
             gap-2.5
             sm:gap-3
-            pt-4
-            sm:pt-5
+            mt-4
+            sm:mt-5
+            border-t
+            border-slate-700/70
+            pt-3
+            sm:pt-4
           "
         >
 
@@ -169,6 +276,18 @@ export default function ProjectCard({
         </div>
 
       </div>
+
+
+      {/* ========================================
+          ALL TECHNOLOGIES POPUP
+      ======================================== */}
+
+      {showAllTech && (
+        <TechPopup
+          project={project}
+          onClose={() => setShowAllTech(false)}
+        />
+      )}
 
     </div>
   );

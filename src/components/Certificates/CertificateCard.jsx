@@ -9,9 +9,12 @@ import {
 import { getTechColor } from "../../utils/colors/techColors";
 import { getPlatformColor } from "../../utils/colors/platformColors";
 import { formatIssueDate } from "../../utils/formatIssueDate";
+import CertificateTechPopup from "./CertificateTechPopup";
 
 const pillClasses =
   "rounded-full border bg-slate-800/60 px-2.5 py-1 sm:px-3 text-xs font-medium";
+
+const MAX_VISIBLE_TAGS = 4; // most that is ever shown (size 6, 7)
 
 export default function CertificateCard({
   certificate,
@@ -21,6 +24,7 @@ export default function CertificateCard({
 }) {
   const [fileUrl, setFileUrl] = useState(null);
   const [loadingFile, setLoadingFile] = useState(true);
+  const [showAllTech, setShowAllTech] = useState(false);
 
   // ======================================================
   // RESOLVE FILE (fileUrl -> storagePath -> pdf)
@@ -73,12 +77,23 @@ export default function CertificateCard({
   const issueDate = formatIssueDate(certificate);
   const allTech = Array.isArray(tech) ? tech : certificate?.tech || [];
 
+  // Tags: 3 + "+N" on size 1 and size 5 (375px, 1280-1535px);
+  // 2 + "+N" on size 2 to 4 (640px - 1279px, where cards are narrower);
+  // 4 + "+N" on size 6, 7 (1536px+, wide cards)
+  const visibleTech = allTech.slice(0, MAX_VISIBLE_TAGS);
+  const extraCount3 = allTech.length - 3;
+  const extraCount2 = allTech.length - 2;
+  const extraCount4 = allTech.length - 4;
+
+  const chipClasses =
+    "rounded-full border border-blue-500/40 bg-blue-500/10 px-2.5 py-1 sm:px-3 text-xs font-medium text-blue-400 transition hover:bg-blue-500/20 hover:border-blue-500";
+
   // ======================================================
   // UI — same container, header and title style as ProjectCard
   //
   //  CERTIFICATE [Virtual Internship]              [Sep 2026]
   //  Title
-  //  (Python) (SQL) (Power BI) (Excel)        <- every tool, never hidden
+  //  (Python) (SQL) (Power BI) (+2)      <- 3 tags + "+N" popup
   //  ────────────────────────────────────
   //  (Forage)               View Certificate ↗
   //
@@ -175,19 +190,79 @@ export default function CertificateCard({
             bottom so every card in a row lines up */}
         <div className="flex-1" />
 
-        {/* Tech pills — all of them are shown */}
+        {/* Tech pills — 3 tags (2 on narrow cards, 4 on wide) + "+N" popup */}
 
         {allTech.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-4 sm:mt-5">
-            {allTech.map((item) => (
-              <span
-                key={item}
-                title={item}
-                className={`${pillClasses} max-w-[160px] truncate ${getTechColor(item)}`}
+          <div className="flex flex-wrap gap-2 lg:gap-1.5 xl:gap-2 mt-4 sm:mt-5">
+            {visibleTech.map((item, index) => {
+              const pill = (
+                <span
+                  title={item}
+                  className={`${pillClasses} max-w-[160px] truncate ${getTechColor(item)}`}
+                >
+                  {item}
+                </span>
+              );
+
+              // 3rd tag: hidden on size 2 to 4 (640-1279px)
+              if (index === 2) {
+                return (
+                  <span key={item} className="contents sm:hidden xl:contents">
+                    {pill}
+                  </span>
+                );
+              }
+
+              // 4th tag: only on size 6, 7 (1536px+)
+              if (index === 3) {
+                return (
+                  <span key={item} className="hidden 2xl:contents">
+                    {pill}
+                  </span>
+                );
+              }
+
+              return <span key={item} className="contents">{pill}</span>;
+            })}
+
+            {/* "+N" — size 1 and size 5 (3 tags visible) */}
+            {extraCount3 > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowAllTech(true)}
+                aria-label={`Show ${extraCount3} more skills`}
+                title={`${extraCount3} more skills`}
+                className={`sm:hidden xl:inline-block 2xl:hidden ${chipClasses}`}
               >
-                {item}
-              </span>
-            ))}
+                +{extraCount3}
+              </button>
+            )}
+
+            {/* "+N" — size 2 to 4 only (2 tags visible) */}
+            {extraCount2 > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowAllTech(true)}
+                aria-label={`Show ${extraCount2} more skills`}
+                title={`${extraCount2} more skills`}
+                className={`hidden sm:inline-block xl:hidden ${chipClasses} lg:!px-2`}
+              >
+                +{extraCount2}
+              </button>
+            )}
+
+            {/* "+N" — size 6, 7 only (4 tags visible) */}
+            {extraCount4 > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowAllTech(true)}
+                aria-label={`Show ${extraCount4} more skills`}
+                title={`${extraCount4} more skills`}
+                className={`hidden 2xl:inline-block ${chipClasses}`}
+              >
+                +{extraCount4}
+              </button>
+            )}
           </div>
         )}
 
@@ -239,6 +314,16 @@ export default function CertificateCard({
           </div>
         </div>
       </div>
+
+      {/* All skills popup */}
+
+      {showAllTech && (
+        <CertificateTechPopup
+          certificate={certificate}
+          tech={allTech}
+          onClose={() => setShowAllTech(false)}
+        />
+      )}
     </div>
   );
 }
